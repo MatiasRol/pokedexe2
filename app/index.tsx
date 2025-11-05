@@ -1,17 +1,61 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import LoadingSpinner from '../components/LoadingSpinner';
 import StatBar from '../components/StatBar';
 import TypeBadge from '../components/TypeBadge';
 import { usePokemon } from '../hooks/usePokemon';
+
+const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 
 export default function HomeScreen() {
   const router = useRouter();
   const { pokemon, loading, error, setPokemonId } = usePokemon(25);
   const [searchInput, setSearchInput] = useState('');
   const [favorites, setFavorites] = useState<number[]>([]);
+  const [iaQuestion, setIaQuestion] = useState('');
+  const [iaResponse, setIaResponse] = useState('');
+  const [iaLoading, setIaLoading] = useState(false);
 
+  // 🧠 Función para consultar Gemini
+  const consultarGemini = async () => {
+    if (!API_KEY) {
+      setIaResponse('⚠️ No hay API Key configurada.');
+      return;
+    }
+
+    if (!iaQuestion.trim()) {
+      setIaResponse('⚠️ Escribe una pregunta primero.');
+      return;
+    }
+
+    setIaLoading(true);
+    setIaResponse('');
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: iaQuestion }] }],
+          }),
+        }
+      );
+
+      const data = await res.json();
+      const texto = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (texto) setIaResponse(texto);
+      else setIaResponse('❌ No se pudo obtener una respuesta.');
+    } catch (err) {
+      console.error('Error al consultar la IA:', err);
+      setIaResponse('⚠️ Error al conectar con la IA.');
+    } finally {
+      setIaLoading(false);
+    }
+  };
+
+  // 🔎 Funciones normales de Pokédex
   const handleSearch = () => {
     const searchValue = searchInput.toLowerCase().trim();
     if (searchValue) {
@@ -21,15 +65,11 @@ export default function HomeScreen() {
   };
 
   const handlePrevious = () => {
-    if (pokemon && pokemon.id > 1) {
-      setPokemonId(pokemon.id - 1);
-    }
+    if (pokemon && pokemon.id > 1) setPokemonId(pokemon.id - 1);
   };
 
   const handleNext = () => {
-    if (pokemon && pokemon.id < 1000) {
-      setPokemonId(pokemon.id + 1);
-    }
+    if (pokemon && pokemon.id < 1000) setPokemonId(pokemon.id + 1);
   };
 
   const handleRandom = () => {
@@ -39,11 +79,8 @@ export default function HomeScreen() {
 
   const toggleFavorite = () => {
     if (!pokemon) return;
-    if (favorites.includes(pokemon.id)) {
-      setFavorites(favorites.filter(id => id !== pokemon.id));
-    } else {
-      setFavorites([...favorites, pokemon.id]);
-    }
+    if (favorites.includes(pokemon.id)) setFavorites(favorites.filter(id => id !== pokemon.id));
+    else setFavorites([...favorites, pokemon.id]);
   };
 
   const isFavorite = pokemon && favorites.includes(pokemon.id);
@@ -51,30 +88,22 @@ export default function HomeScreen() {
   return (
     <ScrollView className="flex-1 bg-red-500">
       <View className="p-4 max-w-2xl mx-auto w-full">
+
         {/* Header */}
         <View className="bg-white rounded-t-3xl shadow-2xl p-6 mb-1 mt-8">
           <View className="flex-row items-center justify-between mb-4">
             <Text className="text-3xl font-bold text-gray-800">Pokédex</Text>
-            
+
             <View className="flex-row gap-2">
-              {/* Contador de favoritos */}
               <View className="flex-row items-center gap-2 bg-red-500 px-4 py-2 rounded-full">
                 <Text className="text-white">❤️</Text>
                 <Text className="font-bold text-white">{favorites.length}</Text>
               </View>
-              
-              {/* Botón de IA */}
-              <TouchableOpacity
-                onPress={() => router.push('/ai-chat')}
-                className="bg-purple-500 px-4 py-2 rounded-full flex-row items-center gap-2"
-              >
-                <Text className="text-white text-xl">🤖</Text>
-              </TouchableOpacity>
             </View>
           </View>
 
-          {/* Buscador */}
-          <View className="flex-row gap-2">
+          {/* 🔍 Barra para buscar Pokémon */}
+          <View className="flex-row gap-2 mb-3">
             <TextInput
               value={searchInput}
               onChangeText={setSearchInput}
@@ -89,10 +118,39 @@ export default function HomeScreen() {
               <Text className="text-white font-bold">🔍</Text>
             </TouchableOpacity>
           </View>
+
+          {/* 🤖 Barra para preguntar a la IA */}
+          <View className="flex-row gap-2">
+            <TextInput
+              value={iaQuestion}
+              onChangeText={setIaQuestion}
+              onSubmitEditing={consultarGemini}
+              placeholder="Hazle una pregunta a la IA..."
+              className="flex-1 px-4 py-3 border-2 border-purple-300 rounded-xl"
+            />
+            <TouchableOpacity
+              onPress={consultarGemini}
+              className="bg-purple-600 px-6 py-3 rounded-xl items-center justify-center"
+            >
+              <Text className="text-white font-bold text-lg">🤖</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Contenido */}
-        <View className="bg-white rounded-b-3xl shadow-2xl p-6">
+        {/* 🧠 Respuesta de la IA */}
+        {iaLoading ? (
+          <View className="bg-purple-100 p-4 mt-4 rounded-xl items-center">
+            <ActivityIndicator color="#a855f7" />
+            <Text className="text-purple-700 mt-2">Pensando...</Text>
+          </View>
+        ) : iaResponse ? (
+          <View className="bg-purple-50 p-4 mt-4 rounded-xl">
+            <Text className="text-gray-800">{iaResponse}</Text>
+          </View>
+        ) : null}
+
+        {/* 📲 Contenido principal del Pokémon */}
+        <View className="bg-white rounded-b-3xl shadow-2xl p-6 mt-4">
           {loading && <LoadingSpinner />}
 
           {error && (
@@ -109,7 +167,7 @@ export default function HomeScreen() {
 
           {!loading && !error && pokemon && (
             <View>
-              {/* Imagen */}
+              {/* Imagen y nombre */}
               <View className="bg-gray-100 rounded-2xl p-8 mb-6 relative">
                 <TouchableOpacity
                   onPress={toggleFavorite}
@@ -117,7 +175,7 @@ export default function HomeScreen() {
                 >
                   <Text className="text-2xl">{isFavorite ? '❤️' : '🤍'}</Text>
                 </TouchableOpacity>
-                
+
                 <Image
                   source={{ uri: pokemon.sprites.other['official-artwork'].front_default }}
                   style={{ width: 256, height: 256 }}
@@ -126,7 +184,6 @@ export default function HomeScreen() {
                 />
               </View>
 
-              {/* Info Básica */}
               <View className="items-center mb-6">
                 <Text className="text-gray-500 font-bold text-lg">
                   #{String(pokemon.id).padStart(3, '0')}
@@ -134,8 +191,6 @@ export default function HomeScreen() {
                 <Text className="text-4xl font-bold text-gray-800 capitalize mb-4">
                   {pokemon.name}
                 </Text>
-                
-                {/* Tipos */}
                 <View className="flex-row gap-2 mb-6">
                   {pokemon.types.map((type) => (
                     <TypeBadge key={type.type.name} type={type.type.name} />
@@ -143,37 +198,15 @@ export default function HomeScreen() {
                 </View>
               </View>
 
-              {/* Botón para preguntar a la IA sobre este Pokémon */}
-              <TouchableOpacity
-                onPress={() => router.push({
-                  pathname: '/ai-chat',
-                  params: { 
-                    pokemonName: pokemon.name,
-                    pokemonTypes: pokemon.types.map(t => t.type.name).join(',')
-                  }
-                })}
-                className="bg-purple-500 p-4 rounded-2xl items-center mb-6"
-              >
-                <Text className="text-white font-bold text-lg">
-                  🤖 Pregunta a la IA sobre {pokemon.name}
-                </Text>
-              </TouchableOpacity>
-
               {/* Stats */}
               <View className="bg-gray-50 rounded-2xl p-6 mb-6">
-                <Text className="text-xl font-bold text-gray-800 mb-4">
-                  ⚡ Estadísticas
-                </Text>
+                <Text className="text-xl font-bold text-gray-800 mb-4">⚡ Estadísticas</Text>
                 {pokemon.stats.map((stat) => (
-                  <StatBar
-                    key={stat.stat.name}
-                    name={stat.stat.name}
-                    value={stat.base_stat}
-                  />
+                  <StatBar key={stat.stat.name} name={stat.stat.name} value={stat.base_stat} />
                 ))}
               </View>
 
-              {/* Info Adicional */}
+              {/* Datos adicionales */}
               <View className="flex-row gap-4 mb-6">
                 <View className="flex-1 bg-blue-50 rounded-xl p-4 items-center">
                   <Text className="text-2xl mb-2">🛡️</Text>
@@ -182,7 +215,7 @@ export default function HomeScreen() {
                   </Text>
                   <Text className="text-xs text-gray-600 font-semibold">KG</Text>
                 </View>
-                
+
                 <View className="flex-1 bg-green-50 rounded-xl p-4 items-center">
                   <Text className="text-2xl mb-2">📏</Text>
                   <Text className="text-2xl font-bold text-gray-800">
@@ -190,7 +223,7 @@ export default function HomeScreen() {
                   </Text>
                   <Text className="text-xs text-gray-600 font-semibold">M</Text>
                 </View>
-                
+
                 <View className="flex-1 bg-purple-50 rounded-xl p-4 items-center">
                   <Text className="text-2xl mb-2">⚡</Text>
                   <Text className="text-2xl font-bold text-gray-800">
@@ -199,62 +232,14 @@ export default function HomeScreen() {
                   <Text className="text-xs text-gray-600 font-semibold">HABILIDADES</Text>
                 </View>
               </View>
-
-              {/* Habilidades */}
-              <View className="bg-yellow-50 rounded-2xl p-4 mb-6">
-                <Text className="text-sm font-bold text-gray-700 mb-2">Habilidades:</Text>
-                <View className="flex-row flex-wrap gap-2">
-                  {pokemon.abilities.map((ability) => (
-                    <View key={ability.ability.name} className="bg-yellow-200 px-4 py-2 rounded-lg">
-                      <Text className="text-yellow-800 text-sm font-semibold capitalize">
-                        {ability.ability.name.replace('-', ' ')}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-
-              {/* Navegación */}
-              <View className="flex-row gap-2">
-                <TouchableOpacity
-                  onPress={handlePrevious}
-                  disabled={pokemon.id <= 1}
-                  className={`flex-1 py-3 rounded-xl items-center ${
-                    pokemon.id <= 1 ? 'bg-gray-300' : 'bg-gray-200'
-                  }`}
-                >
-                  <Text className="text-gray-700 font-bold">← Anterior</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  onPress={handleRandom}
-                  className="flex-1 bg-purple-500 py-3 rounded-xl items-center"
-                >
-                  <Text className="text-white font-bold">🎲 Aleatorio</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  onPress={handleNext}
-                  disabled={pokemon.id >= 1000}
-                  className={`flex-1 py-3 rounded-xl items-center ${
-                    pokemon.id >= 1000 ? 'bg-gray-300' : 'bg-gray-200'
-                  }`}
-                >
-                  <Text className="text-gray-700 font-bold">Siguiente →</Text>
-                </TouchableOpacity>
-              </View>
             </View>
           )}
         </View>
 
         {/* Footer */}
         <View className="items-center mt-6 pb-8">
-          <Text className="text-white text-sm font-semibold">
-            Pokédex con React Native + IA
-          </Text>
-          <Text className="text-white text-xs mt-1 opacity-75">
-            {favorites.length} Pokémon favoritos
-          </Text>
+          <Text className="text-white text-sm font-semibold">Pokédex con React Native + IA</Text>
+          <Text className="text-white text-xs mt-1 opacity-75">{favorites.length} Pokémon favoritos</Text>
         </View>
       </View>
     </ScrollView>
