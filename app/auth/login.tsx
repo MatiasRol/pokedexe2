@@ -8,19 +8,19 @@
  * - Manejo de errores específicos
  */
 
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Alert,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    Text,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import CustomInput from '../../components/auth/CustomInput';
-import { LoginSchema, LoginFormData } from '../../utils/authSchemas';
+import CustomInput from './CustomInput';
+import { LoginFormData, LoginSchema } from '../../utils/authSchemas';
 
 export default function LoginScreen() {
   const router = useRouter();

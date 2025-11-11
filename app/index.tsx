@@ -150,6 +150,13 @@ export default function HomeScreen() {
                   <Text className="text-white font-bold text-base">🤖 IA</Text>
                 </TouchableOpacity>
 
+                <TouchableOpacity
+                  onPress={() => router.push('../auth/login')}
+                  className="bg-blue-600 px-4 py-3 rounded-2xl border-2 border-blue-800 shadow-lg"
+                >
+                  <Text className="text-white font-bold text-base">🔐</Text>
+                </TouchableOpacity>
+
                 <View className="flex-row items-center gap-2 bg-pink-500 px-4 py-3 rounded-2xl border-2 border-pink-700 shadow-lg">
                   <Text className="text-white text-lg">❤️</Text>
                   <Text className="font-bold text-white text-base">{favorites.length}</Text>

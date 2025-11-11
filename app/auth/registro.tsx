@@ -8,19 +8,19 @@
  * - Manejo de teclado optimizado
  */
 
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import CustomInput from '../../components/auth/CustomInput';
-import { RegistroSchema, RegistroFormData } from '../../utils/authSchemas';
+import { RegistroFormData, RegistroSchema } from '../../utils/authSchemas';
+import CustomInput from './CustomInput';
 
 export default function RegistroScreen() {
   const router = useRouter();
