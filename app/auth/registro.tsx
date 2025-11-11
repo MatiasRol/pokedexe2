@@ -1,13 +1,3 @@
-/**
- * 📝 PANTALLA DE REGISTRO
- * ========================
- * 
- * Formulario completo de registro con validación Zod
- * - Nombre, email, contraseña y confirmación
- * - Validación estricta de datos
- * - Manejo de teclado optimizado
- */
-
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -20,7 +10,7 @@ import {
   View,
 } from 'react-native';
 import { RegistroFormData, RegistroSchema } from '../../utils/authSchemas';
-import CustomInput from './CustomInput';
+import CustomInput from '../auth/CustomInput';
 
 export default function RegistroScreen() {
   const router = useRouter();
@@ -33,29 +23,33 @@ export default function RegistroScreen() {
   const [errors, setErrors] = useState<Partial<Record<keyof RegistroFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Actualizar campo del formulario
   const updateField = (field: keyof RegistroFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Limpiar error del campo al escribir
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
-  // Manejar envío del formulario
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
       setErrors({});
 
-      // Validar con Zod
       const validatedData = RegistroSchema.parse(formData);
 
-      // Simular registro exitoso
-      onRegisterSuccess(validatedData);
+      // ✅ Regresar directamente a la Pokédex
+      Alert.alert(
+        '✅ Registro Exitoso',
+        `¡Bienvenido ${validatedData.nombre}! Tu cuenta ha sido creada.`,
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/'),
+          },
+        ]
+      );
     } catch (error: any) {
       if (error.errors) {
-        // Mapear errores de Zod
         const newErrors: Partial<Record<keyof RegistroFormData, string>> = {};
         error.errors.forEach((err: any) => {
           const field = err.path[0] as keyof RegistroFormData;
@@ -66,20 +60,6 @@ export default function RegistroScreen() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Función de éxito (simulada)
-  const onRegisterSuccess = (data: RegistroFormData) => {
-    Alert.alert(
-      '✅ Registro Exitoso',
-      `¡Bienvenido ${data.nombre}! Tu cuenta ha sido creada.`,
-      [
-        {
-          text: 'Ir al Login',
-          onPress: () => router.push('../auth/login'),
-        },
-      ]
-    );
   };
 
   return (
@@ -165,7 +145,7 @@ export default function RegistroScreen() {
               <Text className="text-white text-base mr-2">
                 ¿Ya tienes cuenta?
               </Text>
-              <TouchableOpacity onPress={() => router.push('../auth/login')}>
+              <TouchableOpacity onPress={() => router.push('/auth/login')}>
                 <Text className="text-yellow-300 font-bold text-base underline">
                   Inicia Sesión
                 </Text>

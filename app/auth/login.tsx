@@ -1,26 +1,16 @@
-/**
- * 🔐 PANTALLA DE LOGIN
- * =====================
- * 
- * Formulario de inicio de sesión con validación Zod
- * - Email y contraseña
- * - Validación en tiempo real
- * - Manejo de errores específicos
- */
-
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Alert,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import CustomInput from './CustomInput';
 import { LoginFormData, LoginSchema } from '../../utils/authSchemas';
+import CustomInput from '../auth/CustomInput';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -31,29 +21,33 @@ export default function LoginScreen() {
   const [errors, setErrors] = useState<Partial<Record<keyof LoginFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Actualizar campo del formulario
   const updateField = (field: keyof LoginFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    // Limpiar error del campo al escribir
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
-  // Manejar envío del formulario
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
       setErrors({});
 
-      // Validar con Zod
       const validatedData = LoginSchema.parse(formData);
 
-      // Simular login exitoso
-      onLoginSuccess(validatedData);
+      // ✅ Regresar directamente a la Pokédex
+      Alert.alert(
+        '✅ Inicio de Sesión Exitoso',
+        `¡Bienvenido de nuevo!`,
+        [
+          {
+            text: 'OK',
+            onPress: () => router.replace('/'),
+          },
+        ]
+      );
     } catch (error: any) {
       if (error.errors) {
-        // Mapear errores de Zod
         const newErrors: Partial<Record<keyof LoginFormData, string>> = {};
         error.errors.forEach((err: any) => {
           const field = err.path[0] as keyof LoginFormData;
@@ -64,20 +58,6 @@ export default function LoginScreen() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Función de éxito (simulada)
-  const onLoginSuccess = (data: LoginFormData) => {
-    Alert.alert(
-      '✅ Inicio de Sesión Exitoso',
-      `¡Bienvenido de nuevo!`,
-      [
-        {
-          text: 'Continuar',
-          onPress: () => router.push('/'),
-        },
-      ]
-    );
   };
 
   return (
@@ -145,7 +125,7 @@ export default function LoginScreen() {
               <Text className="text-white text-base mr-2">
                 ¿No tienes cuenta?
               </Text>
-              <TouchableOpacity onPress={() => router.push('../auth/registro')}>
+              <TouchableOpacity onPress={() => router.push('/auth/registro')}>
                 <Text className="text-yellow-300 font-bold text-base underline">
                   Regístrate
                 </Text>
