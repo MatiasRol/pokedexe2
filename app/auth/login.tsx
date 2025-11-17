@@ -27,25 +27,15 @@ export default function LoginScreen() {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
-
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
       setErrors({});
-
+  
       const validatedData = LoginSchema.parse(formData);
-
-      // ✅ Regresar directamente a la Pokédex
-      Alert.alert(
-        '✅ Inicio de Sesión Exitoso',
-        `¡Bienvenido de nuevo!`,
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/'),
-          },
-        ]
-      );
+  
+      // ✅ Ir directo sin alert
+      router.push('/pokedex');
     } catch (error: any) {
       if (error.errors) {
         const newErrors: Partial<Record<keyof LoginFormData, string>> = {};

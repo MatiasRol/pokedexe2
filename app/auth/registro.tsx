@@ -1,13 +1,12 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { RegistroFormData, RegistroSchema } from '../../utils/authSchemas';
 import CustomInput from '../auth/CustomInput';
@@ -34,20 +33,11 @@ export default function RegistroScreen() {
     try {
       setIsSubmitting(true);
       setErrors({});
-
+  
       const validatedData = RegistroSchema.parse(formData);
-
-      // ✅ Regresar directamente a la Pokédex
-      Alert.alert(
-        '✅ Registro Exitoso',
-        `¡Bienvenido ${validatedData.nombre}! Tu cuenta ha sido creada.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/'),
-          },
-        ]
-      );
+  
+      // ✅ Ir directo sin alert
+      router.push('/pokedex');
     } catch (error: any) {
       if (error.errors) {
         const newErrors: Partial<Record<keyof RegistroFormData, string>> = {};
