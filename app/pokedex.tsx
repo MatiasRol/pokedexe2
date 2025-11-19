@@ -242,8 +242,7 @@ export default function PokedexScreen() {
                           text: `¡Hola! Puedo responder preguntas sobre ${pokemon.name}. ¿Qué quieres saber?` 
                         }]);
                       }}
-                      className="bg-gradient-to-r from-purple-600 to-indigo-600 p-4 rounded-2xl items-center mt-4 mb-4 border-2 border-purple-800 shadow-lg"
-                    >
+                      className="bg-purple-600 p-4 rounded-2xl items-center mt-4 mb-4 border-2 border-purple-800 shadow-lg"                    >
                       <Text className="text-white font-bold text-base">
                         🤖 Pregunta a la IA sobre {pokemon.name}
                       </Text>
@@ -347,11 +346,8 @@ export default function PokedexScreen() {
 
           {/* Footer */}
           <View className="items-center mt-6 pb-8">
-            <Text className="text-white text-sm font-bold drop-shadow-lg">
-              🎮 Pokédex Clásica con IA
-            </Text>
-            <Text className="text-white text-xs mt-1 opacity-90">
-              {favorites.length} Pokémon favoritos • Powered by Gemini AI
+                    <Text className="text-white text-xs mt-1 opacity-90">
+              {favorites.length} Pokémon favoritos
             </Text>
           </View>
         </View>
@@ -365,7 +361,7 @@ export default function PokedexScreen() {
             right: 0,
             top: 0,
             bottom: 0,
-            width: SCREEN_WIDTH * 0.5,
+            width: SCREEN_WIDTH * 0.7,
             transform: [{ translateX: slideAnim }],
           }}
           className="bg-white shadow-2xl rounded-l-3xl p-4 border-l-4 border-blue-900"

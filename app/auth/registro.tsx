@@ -55,7 +55,7 @@ export default function RegistroScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-gradient-to-b from-blue-600 to-purple-700"
+      className="flex-1 bg-red-600"
     >
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}

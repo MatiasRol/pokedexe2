@@ -1,13 +1,3 @@
-/**
- * 📝 CUSTOM INPUT COMPONENT
- * ==========================
- * 
- * Componente reutilizable para inputs de formularios
- * - Manejo de errores con Zod
- * - Estilos condicionales
- * - Soporte para contraseñas
- */
-
 import { View, Text, TextInput, TextInputProps } from 'react-native';
 
 interface CustomInputProps extends TextInputProps {

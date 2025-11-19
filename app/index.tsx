@@ -1,9 +1,3 @@
-/**
- * 🎮 PANTALLA DE BIENVENIDA
- * ==========================
- * Primera pantalla que ve el usuario al abrir la app
- */
-
 import { useRouter } from 'expo-router';
 import { Text, TouchableOpacity, View } from 'react-native';
 
@@ -11,7 +5,7 @@ export default function WelcomeScreen() {
   const router = useRouter();
 
   return (
-    <View className="flex-1 bg-gradient-to-b from-red-600 to-purple-700">
+    <View className="flex-1 bg-red-600">
       <View className="flex-1 justify-center items-center px-6">
         {/* Logo/Icono Principal */}
         <View className="items-center mb-12">
