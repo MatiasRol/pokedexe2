@@ -62,10 +62,7 @@ export default function WelcomeScreen() {
 
         {/* Footer */}
         <View className="absolute bottom-8">
-          <Text className="text-white text-sm opacity-75">
-            Powered by PokéAPI & Gemini AI
-          </Text>
-        </View>
+                </View>
       </View>
     </View>
   );
