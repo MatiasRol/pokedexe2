@@ -6,13 +6,15 @@ import {
   Dimensions,
   Easing,
   Image,
+  Modal,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 import LoadingSpinner from '../components/LoadingSpinner';
+import PokemonQR from '../components/PokemonQR';
 import StatBar from '../components/StatBar';
 import TypeBadge from '../components/TypeBadge';
 import { usePokemon } from '../hooks/usePokemon';
@@ -26,42 +28,37 @@ export default function PokedexScreen() {
   const [searchInput, setSearchInput] = useState('');
   const [favorites, setFavorites] = useState<number[]>([]);
   const [iaVisible, setIaVisible] = useState(false);
+  const [qrModalVisible, setQrModalVisible] = useState(false);
   const [messages, setMessages] = useState<{ role: 'user' | 'ai'; text: string }[]>([]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [iaLoading, setIaLoading] = useState(false);
 
-  // Animación del panel lateral
   const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
 
   const toggleIA = () => {
     if (iaVisible) {
       Animated.timing(slideAnim, {
-        toValue: SCREEN_WIDTH,
-        duration: 400,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.cubic),
+        toValue: SCREEN_WIDTH, duration: 400,
+        useNativeDriver: true, easing: Easing.out(Easing.cubic),
       }).start(() => setIaVisible(false));
     } else {
       setIaVisible(true);
       Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-        easing: Easing.out(Easing.cubic),
+        toValue: 0, duration: 400,
+        useNativeDriver: true, easing: Easing.out(Easing.cubic),
       }).start();
     }
   };
 
-  // Enviar mensaje a la IA
   const enviarMensaje = async () => {
     if (!API_KEY) {
-      setMessages((prev) => [...prev, { role: 'ai', text: '⚠️ No hay API Key configurada.' }]);
+      setMessages(prev => [...prev, { role: 'ai', text: '⚠️ No hay API Key configurada.' }]);
       return;
     }
     if (!currentMessage.trim()) return;
 
     const pregunta = currentMessage.trim();
-    setMessages((prev) => [...prev, { role: 'user', text: pregunta }]);
+    setMessages(prev => [...prev, { role: 'user', text: pregunta }]);
     setCurrentMessage('');
     setIaLoading(true);
 
@@ -76,64 +73,42 @@ export default function PokedexScreen() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{
-              parts: [{
-                text: `${contexto}Eres un experto en Pokémon. Responde de forma breve y amigable en español.\n\nPregunta: ${pregunta}`
-              }]
-            }],
+            contents: [{ parts: [{ text: `${contexto}Eres un experto en Pokémon. Responde de forma breve y amigable en español.\n\nPregunta: ${pregunta}` }] }],
           }),
         }
       );
       const data = await res.json();
       const texto = data?.candidates?.[0]?.content?.parts?.[0]?.text || '❌ No se pudo obtener respuesta.';
-      setMessages((prev) => [...prev, { role: 'ai', text: texto }]);
-    } catch (err) {
-      console.error('Error IA:', err);
-      setMessages((prev) => [...prev, { role: 'ai', text: '⚠️ Error al conectar con la IA.' }]);
+      setMessages(prev => [...prev, { role: 'ai', text: texto }]);
+    } catch {
+      setMessages(prev => [...prev, { role: 'ai', text: '⚠️ Error al conectar con la IA.' }]);
     } finally {
       setIaLoading(false);
     }
   };
 
-  // Funciones de Pokédex
   const handleSearch = () => {
-    const searchValue = searchInput.toLowerCase().trim();
-    if (searchValue) {
-      setPokemonId(searchValue);
-      setSearchInput('');
-    }
+    const v = searchInput.toLowerCase().trim();
+    if (v) { setPokemonId(v); setSearchInput(''); }
   };
-
-  const handlePrevious = () => {
-    if (pokemon && pokemon.id > 1) setPokemonId(pokemon.id - 1);
-  };
-
-  const handleNext = () => {
-    if (pokemon && pokemon.id < 1000) setPokemonId(pokemon.id + 1);
-  };
-
-  const handleRandom = () => {
-    const randomId = Math.floor(Math.random() * 898) + 1;
-    setPokemonId(randomId);
-  };
-
+  const handlePrevious = () => { if (pokemon && pokemon.id > 1) setPokemonId(pokemon.id - 1); };
+  const handleNext     = () => { if (pokemon && pokemon.id < 1000) setPokemonId(pokemon.id + 1); };
+  const handleRandom   = () => setPokemonId(Math.floor(Math.random() * 898) + 1);
   const toggleFavorite = () => {
     if (!pokemon) return;
-    if (favorites.includes(pokemon.id)) setFavorites(favorites.filter(id => id !== pokemon.id));
-    else setFavorites([...favorites, pokemon.id]);
+    setFavorites(prev =>
+      prev.includes(pokemon.id) ? prev.filter(id => id !== pokemon.id) : [...prev, pokemon.id]
+    );
   };
-
   const isFavorite = pokemon && favorites.includes(pokemon.id);
 
   return (
     <View className="flex-1 bg-red-600">
-      {/* POKÉDEX PRINCIPAL */}
       <ScrollView className="flex-1">
         <View className="p-4 max-w-2xl mx-auto w-full">
-          
+
           {/* HEADER */}
           <View className="bg-gradient-to-b from-red-600 to-red-700 rounded-3xl shadow-2xl p-6 mb-2 mt-8 border-4 border-red-800">
-            {/* Luces superiores */}
             <View className="flex-row items-center gap-3 mb-4">
               <View className="w-16 h-16 bg-blue-400 rounded-full border-4 border-blue-600 shadow-lg" />
               <View className="w-4 h-4 bg-red-400 rounded-full border-2 border-red-600" />
@@ -141,28 +116,38 @@ export default function PokedexScreen() {
               <View className="w-4 h-4 bg-green-400 rounded-full border-2 border-green-600" />
             </View>
 
-            {/* Título y controles */}
             <View className="flex-row items-center justify-between mb-4">
               <Text className="text-3xl font-bold text-white drop-shadow-lg">POKÉDEX</Text>
-
               <View className="flex-row gap-2">
-                {/* Botón IA */}
+                {/* ── Escáner QR ── */}
+                <TouchableOpacity
+                  onPress={() => router.push('/qr-scanner')}
+                  className="bg-emerald-600 px-4 py-3 rounded-2xl border-2 border-emerald-800 shadow-lg"
+                >
+                  <Text className="text-white font-bold text-base">📷 QR</Text>
+                </TouchableOpacity>
+                {/* ── Tienda ── */}
+                <TouchableOpacity
+                  onPress={() => router.push('/checkout')}
+                  className="bg-amber-500 px-4 py-3 rounded-2xl border-2 border-amber-700 shadow-lg"
+                >
+                  <Text className="text-white font-bold text-base">🛒</Text>
+                </TouchableOpacity>
+                {/* ── IA ── */}
                 <TouchableOpacity
                   onPress={toggleIA}
-                  className="bg-purple-600 px-5 py-3 rounded-2xl border-2 border-purple-800 shadow-lg"
+                  className="bg-purple-600 px-4 py-3 rounded-2xl border-2 border-purple-800 shadow-lg"
                 >
-                  <Text className="text-white font-bold text-base">🤖 IA</Text>
+                  <Text className="text-white font-bold text-base">🤖</Text>
                 </TouchableOpacity>
-
                 {/* Favoritos */}
-                <View className="flex-row items-center gap-2 bg-pink-500 px-4 py-3 rounded-2xl border-2 border-pink-700 shadow-lg">
-                  <Text className="text-white text-lg">❤️</Text>
-                  <Text className="font-bold text-white text-base">{favorites.length}</Text>
+                <View className="flex-row items-center gap-1 bg-pink-500 px-3 py-3 rounded-2xl border-2 border-pink-700 shadow-lg">
+                  <Text className="text-white text-sm">❤️</Text>
+                  <Text className="font-bold text-white text-sm">{favorites.length}</Text>
                 </View>
               </View>
             </View>
 
-            {/* Barra de búsqueda */}
             <View className="flex-row gap-2">
               <TextInput
                 value={searchInput}
@@ -181,7 +166,7 @@ export default function PokedexScreen() {
             </View>
           </View>
 
-          {/* PANTALLA PRINCIPAL (Game Boy style) */}
+          {/* PANTALLA PRINCIPAL */}
           <View className="bg-gray-800 rounded-3xl shadow-2xl p-6 border-4 border-gray-900">
             <View className="bg-green-100 rounded-2xl p-4 border-4 border-green-900 shadow-inner">
               {loading && <LoadingSpinner />}
@@ -189,18 +174,15 @@ export default function PokedexScreen() {
               {error && (
                 <View className="items-center py-12">
                   <Text className="text-red-700 font-bold text-xl mb-4">⚠️ {error}</Text>
-                  <TouchableOpacity
-                    onPress={handleRandom}
-                    className="bg-red-600 px-6 py-3 rounded-2xl border-2 border-red-800 shadow-lg"
-                  >
-                    <Text className="text-white font-bold text-base">🎲 Pokémon Aleatorio</Text>
+                  <TouchableOpacity onPress={handleRandom} className="bg-red-600 px-6 py-3 rounded-2xl border-2 border-red-800">
+                    <Text className="text-white font-bold">🎲 Pokémon Aleatorio</Text>
                   </TouchableOpacity>
                 </View>
               )}
 
               {!loading && !error && pokemon && (
                 <View>
-                  {/* Imagen del Pokémon */}
+                  {/* Imagen */}
                   <View className="bg-white rounded-3xl p-6 mb-4 relative shadow-lg border-2 border-gray-300">
                     <TouchableOpacity
                       onPress={toggleFavorite}
@@ -208,7 +190,6 @@ export default function PokedexScreen() {
                     >
                       <Text className="text-3xl">{isFavorite ? '❤️' : '🤍'}</Text>
                     </TouchableOpacity>
-
                     <Image
                       source={{ uri: pokemon.sprites.other['official-artwork'].front_default }}
                       style={{ width: 240, height: 240 }}
@@ -217,7 +198,7 @@ export default function PokedexScreen() {
                     />
                   </View>
 
-                  {/* Info del Pokémon */}
+                  {/* Info */}
                   <View className="items-center mb-4 bg-white rounded-2xl p-4 shadow-md border-2 border-gray-300">
                     <Text className="text-gray-600 font-bold text-lg">
                       #{String(pokemon.id).padStart(3, '0')}
@@ -225,70 +206,72 @@ export default function PokedexScreen() {
                     <Text className="text-4xl font-bold text-gray-900 capitalize mb-3">
                       {pokemon.name}
                     </Text>
-                    
-                    {/* Tipos */}
-                    <View className="flex-row gap-2">
-                      {pokemon.types.map((type) => (
+                    <View className="flex-row gap-2 mb-4">
+                      {pokemon.types.map(type => (
                         <TypeBadge key={type.type.name} type={type.type.name} />
                       ))}
                     </View>
 
-                    {/* Botón pregunta IA */}
+                    {/* ── Botones de acción ── */}
+                    <View className="w-full flex-row gap-2 mb-2">
+                      {/* Ver QR del Pokémon */}
+                      <TouchableOpacity
+                        onPress={() => setQrModalVisible(true)}
+                        className="flex-1 bg-emerald-500 py-3 rounded-2xl items-center border-2 border-emerald-700"
+                      >
+                        <Text className="text-white font-bold text-sm">📱 Ver QR</Text>
+                      </TouchableOpacity>
+                      {/* Comprar */}
+                      <TouchableOpacity
+                        onPress={() => router.push('/checkout')}
+                        className="flex-1 bg-amber-500 py-3 rounded-2xl items-center border-2 border-amber-700"
+                      >
+                        <Text className="text-white font-bold text-sm">🛒 Comprar</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Preguntar a la IA */}
                     <TouchableOpacity
                       onPress={() => {
                         toggleIA();
-                        setMessages([{ 
-                          role: 'ai', 
-                          text: `¡Hola! Puedo responder preguntas sobre ${pokemon.name}. ¿Qué quieres saber?` 
-                        }]);
+                        setMessages([{ role: 'ai', text: `¡Hola! Puedo responder preguntas sobre ${pokemon.name}. ¿Qué quieres saber?` }]);
                       }}
-                      className="bg-purple-600 p-4 rounded-2xl items-center mt-4 mb-4 border-2 border-purple-800 shadow-lg"                    >
-                      <Text className="text-white font-bold text-base">
+                      className="bg-purple-600 p-3 rounded-2xl items-center w-full border-2 border-purple-800"
+                    >
+                      <Text className="text-white font-bold text-sm">
                         🤖 Pregunta a la IA sobre {pokemon.name}
                       </Text>
                     </TouchableOpacity>
                   </View>
 
                   {/* Estadísticas */}
-                  <View className="bg-blue-50 rounded-2xl p-5 mb-4 border-2 border-blue-200 shadow-md">
+                  <View className="bg-blue-50 rounded-2xl p-5 mb-4 border-2 border-blue-200">
                     <Text className="text-xl font-bold text-blue-900 mb-3">⚡ Estadísticas</Text>
-                    {pokemon.stats.map((stat) => (
+                    {pokemon.stats.map(stat => (
                       <StatBar key={stat.stat.name} name={stat.stat.name} value={stat.base_stat} />
                     ))}
                   </View>
 
                   {/* Info adicional */}
                   <View className="flex-row gap-3 mb-4">
-                    <View className="flex-1 bg-yellow-100 rounded-2xl p-4 items-center border-2 border-yellow-300 shadow-md">
-                      <Text className="text-3xl mb-1">⚖️</Text>
-                      <Text className="text-2xl font-bold text-gray-800">
-                        {(pokemon.weight / 10).toFixed(1)}
-                      </Text>
-                      <Text className="text-xs text-gray-600 font-bold">KG</Text>
-                    </View>
-                    
-                    <View className="flex-1 bg-green-100 rounded-2xl p-4 items-center border-2 border-green-300 shadow-md">
-                      <Text className="text-3xl mb-1">📏</Text>
-                      <Text className="text-2xl font-bold text-gray-800">
-                        {(pokemon.height / 10).toFixed(1)}
-                      </Text>
-                      <Text className="text-xs text-gray-600 font-bold">M</Text>
-                    </View>
-                    
-                    <View className="flex-1 bg-purple-100 rounded-2xl p-4 items-center border-2 border-purple-300 shadow-md">
-                      <Text className="text-3xl mb-1">✨</Text>
-                      <Text className="text-2xl font-bold text-gray-800">
-                        {pokemon.abilities.length}
-                      </Text>
-                      <Text className="text-xs text-gray-600 font-bold">HABILIDADES</Text>
-                    </View>
+                    {[
+                      { icon: '⚖️', val: `${(pokemon.weight / 10).toFixed(1)}`, unit: 'KG', bg: 'bg-yellow-100', border: 'border-yellow-300' },
+                      { icon: '📏', val: `${(pokemon.height / 10).toFixed(1)}`, unit: 'M',  bg: 'bg-green-100',  border: 'border-green-300' },
+                      { icon: '✨', val: `${pokemon.abilities.length}`, unit: 'HAB', bg: 'bg-purple-100', border: 'border-purple-300' },
+                    ].map(({ icon, val, unit, bg, border }) => (
+                      <View key={unit} className={`flex-1 ${bg} rounded-2xl p-4 items-center border-2 ${border}`}>
+                        <Text className="text-3xl mb-1">{icon}</Text>
+                        <Text className="text-2xl font-bold text-gray-800">{val}</Text>
+                        <Text className="text-xs text-gray-600 font-bold">{unit}</Text>
+                      </View>
+                    ))}
                   </View>
 
                   {/* Habilidades */}
-                  <View className="bg-orange-50 rounded-2xl p-4 mb-4 border-2 border-orange-200 shadow-md">
+                  <View className="bg-orange-50 rounded-2xl p-4 mb-4 border-2 border-orange-200">
                     <Text className="text-sm font-bold text-orange-900 mb-2">🎯 Habilidades:</Text>
                     <View className="flex-row flex-wrap gap-2">
-                      {pokemon.abilities.map((ability) => (
+                      {pokemon.abilities.map(ability => (
                         <View key={ability.ability.name} className="bg-orange-200 px-4 py-2 rounded-xl border border-orange-400">
                           <Text className="text-orange-900 text-sm font-bold capitalize">
                             {ability.ability.name.replace('-', ' ')}
@@ -301,42 +284,19 @@ export default function PokedexScreen() {
                   {/* Navegación */}
                   <View className="flex-row gap-2 mb-6">
                     <TouchableOpacity
-                      onPress={handlePrevious}
-                      disabled={pokemon.id <= 1}
-                      className={`flex-1 py-4 rounded-2xl items-center border-2 shadow-lg ${
-                        pokemon.id <= 1 
-                          ? 'bg-gray-300 border-gray-400' 
-                          : 'bg-blue-500 border-blue-700'
-                      }`}
+                      onPress={handlePrevious} disabled={pokemon.id <= 1}
+                      className={`flex-1 py-4 rounded-2xl items-center border-2 ${pokemon.id <= 1 ? 'bg-gray-300 border-gray-400' : 'bg-blue-500 border-blue-700'}`}
                     >
-                      <Text className={`font-bold text-base ${
-                        pokemon.id <= 1 ? 'text-gray-500' : 'text-white'
-                      }`}>
-                        ← Anterior
-                      </Text>
+                      <Text className={`font-bold ${pokemon.id <= 1 ? 'text-gray-500' : 'text-white'}`}>← Anterior</Text>
                     </TouchableOpacity>
-                    
-                    <TouchableOpacity
-                      onPress={handleRandom}
-                      className="flex-1 bg-green-500 py-4 rounded-2xl items-center border-2 border-green-700 shadow-lg"
-                    >
-                      <Text className="text-white font-bold text-base">🎲 Aleatorio</Text>
+                    <TouchableOpacity onPress={handleRandom} className="flex-1 bg-green-500 py-4 rounded-2xl items-center border-2 border-green-700">
+                      <Text className="text-white font-bold">🎲 Aleatorio</Text>
                     </TouchableOpacity>
-                    
                     <TouchableOpacity
-                      onPress={handleNext}
-                      disabled={pokemon.id >= 1000}
-                      className={`flex-1 py-4 rounded-2xl items-center border-2 shadow-lg ${
-                        pokemon.id >= 1000 
-                          ? 'bg-gray-300 border-gray-400' 
-                          : 'bg-blue-500 border-blue-700'
-                      }`}
+                      onPress={handleNext} disabled={pokemon.id >= 1000}
+                      className={`flex-1 py-4 rounded-2xl items-center border-2 ${pokemon.id >= 1000 ? 'bg-gray-300 border-gray-400' : 'bg-blue-500 border-blue-700'}`}
                     >
-                      <Text className={`font-bold text-base ${
-                        pokemon.id >= 1000 ? 'text-gray-500' : 'text-white'
-                      }`}>
-                        Siguiente →
-                      </Text>
+                      <Text className={`font-bold ${pokemon.id >= 1000 ? 'text-gray-500' : 'text-white'}`}>Siguiente →</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -344,67 +304,82 @@ export default function PokedexScreen() {
             </View>
           </View>
 
-          {/* Footer */}
           <View className="items-center mt-6 pb-8">
-                    <Text className="text-white text-xs mt-1 opacity-90">
-              {favorites.length} Pokémon favoritos
-            </Text>
+            <Text className="text-white text-xs opacity-90">{favorites.length} Pokémon favoritos</Text>
           </View>
         </View>
       </ScrollView>
 
-      {/* PANEL LATERAL IA (50% ancho, blanco) */}
+      {/* ══════════════ MODAL QR ══════════════ */}
+      <Modal
+        visible={qrModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setQrModalVisible(false)}
+      >
+        <View className="flex-1 bg-black/70 items-center justify-center px-6">
+          <View className="bg-gray-900 rounded-3xl p-6 w-full items-center border border-white/10">
+            {/* Header modal */}
+            <View className="flex-row justify-between items-center w-full mb-5">
+              <Text className="text-white text-lg font-bold">QR de {pokemon?.name}</Text>
+              <TouchableOpacity
+                onPress={() => setQrModalVisible(false)}
+                className="bg-white/10 rounded-full w-9 h-9 items-center justify-center"
+              >
+                <Text className="text-white font-bold">✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {pokemon && (
+              <PokemonQR
+                pokemonId={pokemon.id}
+                pokemonName={pokemon.name}
+                size={200}
+              />
+            )}
+
+            <Text className="text-gray-400 text-xs mt-4 text-center leading-relaxed">
+              Escanea este código con la app para{'\n'}cargar directamente este Pokémon
+            </Text>
+
+            {/* Botón escanear */}
+            <TouchableOpacity
+              onPress={() => { setQrModalVisible(false); router.push('/qr-scanner'); }}
+              className="bg-emerald-600 mt-4 px-8 py-3 rounded-2xl border border-emerald-800 w-full items-center"
+            >
+              <Text className="text-white font-bold">📷 Abrir Escáner</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ══════════════ PANEL LATERAL IA ══════════════ */}
       {iaVisible && (
         <Animated.View
-          style={{
-            position: 'absolute',
-            right: 0,
-            top: 0,
-            bottom: 0,
-            width: SCREEN_WIDTH * 0.7,
-            transform: [{ translateX: slideAnim }],
-          }}
+          style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: SCREEN_WIDTH * 0.7, transform: [{ translateX: slideAnim }] }}
           className="bg-white shadow-2xl rounded-l-3xl p-4 border-l-4 border-blue-900"
         >
-          {/* Header del chat */}
           <View className="flex-row justify-between items-center mb-4 bg-blue-800 rounded-2xl p-3 border-2 border-blue-900">
-            <Text className="text-xl font-bold text-white">🤖 Asistente IA</Text>
-            <TouchableOpacity
-              onPress={toggleIA}
-              className="bg-red-500 rounded-full w-8 h-8 items-center justify-center border-2 border-red-700"
-            >
+            <Text className="text-xl font-bold text-white">🤖 IA</Text>
+            <TouchableOpacity onPress={toggleIA} className="bg-red-500 rounded-full w-8 h-8 items-center justify-center border-2 border-red-700">
               <Text className="text-white font-bold text-lg">✖</Text>
             </TouchableOpacity>
           </View>
 
-          {/* Mensajes */}
           <ScrollView className="flex-1 mb-3 bg-white rounded-2xl p-3 border-2 border-gray-300">
             {messages.length === 0 && (
               <View className="items-center justify-center py-8">
                 <Text className="text-4xl mb-2">🤖</Text>
-                <Text className="text-gray-500 text-center font-semibold">
-                  ¡Hola! Pregunta sobre Pokémon
-                </Text>
+                <Text className="text-gray-500 text-center font-semibold">¡Hola! Pregunta sobre Pokémon</Text>
               </View>
             )}
-
-            {messages.map((msg, index) => (
-              <View
-                key={index}
-                className={`my-2 px-4 py-3 rounded-2xl max-w-[85%] shadow-md ${
-                  msg.role === 'user'
-                    ? 'bg-purple-600 self-end border-2 border-purple-800'
-                    : 'bg-gray-100 self-start border-2 border-gray-300'
-                }`}
-              >
-                <Text className={`${
-                  msg.role === 'user' ? 'text-white' : 'text-gray-900'
-                } font-medium`}>
+            {messages.map((msg, i) => (
+              <View key={i} className={`my-2 px-4 py-3 rounded-2xl max-w-[85%] ${msg.role === 'user' ? 'bg-purple-600 self-end border-2 border-purple-800' : 'bg-gray-100 self-start border-2 border-gray-300'}`}>
+                <Text className={msg.role === 'user' ? 'text-white font-medium' : 'text-gray-900 font-medium'}>
                   {msg.text}
                 </Text>
               </View>
             ))}
-
             {iaLoading && (
               <View className="self-start bg-gray-200 px-4 py-3 rounded-2xl my-2 border-2 border-gray-300">
                 <ActivityIndicator color="#7c3aed" />
@@ -412,7 +387,6 @@ export default function PokedexScreen() {
             )}
           </ScrollView>
 
-          {/* Input */}
           <View className="flex-row gap-2">
             <TextInput
               value={currentMessage}
@@ -420,20 +394,14 @@ export default function PokedexScreen() {
               onSubmitEditing={enviarMensaje}
               placeholder="Escribe tu pregunta..."
               placeholderTextColor="#9CA3AF"
-              className="flex-1 bg-white border-2 border-purple-300 rounded-2xl px-4 py-3 font-medium shadow-md"
+              className="flex-1 bg-white border-2 border-purple-300 rounded-2xl px-4 py-3 font-medium"
             />
             <TouchableOpacity
               onPress={enviarMensaje}
               disabled={!currentMessage.trim() || iaLoading}
-              className={`px-5 py-3 rounded-2xl border-2 shadow-lg ${
-                !currentMessage.trim() || iaLoading
-                  ? 'bg-gray-400 border-gray-500'
-                  : 'bg-purple-600 border-purple-800'
-              }`}
+              className={`px-5 py-3 rounded-2xl border-2 ${!currentMessage.trim() || iaLoading ? 'bg-gray-400 border-gray-500' : 'bg-purple-600 border-purple-800'}`}
             >
-              <Text className="text-white font-bold text-xl">
-                {iaLoading ? '⏳' : '➤'}
-              </Text>
+              <Text className="text-white font-bold text-xl">{iaLoading ? '⏳' : '➤'}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
