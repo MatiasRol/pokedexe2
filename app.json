@@ -10,8 +10,12 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "config": {
+        "googleMapsApiKey": "TU_GOOGLE_MAPS_API_KEY_IOS"
+      },
       "infoPlist": {
-        "NSCameraUsageDescription": "Necesitamos acceso a la cámara para escanear códigos QR y de barras."
+        "NSCameraUsageDescription": "Necesitamos acceso a la cámara para escanear códigos QR y de barras.",
+        "NSLocationWhenInUseUsageDescription": "Necesitamos tu ubicación para mostrarte qué Pokémon pueden aparecer cerca de ti."
       }
     },
     "android": {
@@ -23,7 +27,16 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "permissions": ["android.permission.CAMERA"]
+      "config": {
+        "googleMaps": {
+          "apiKey": "TU_GOOGLE_MAPS_API_KEY_ANDROID"
+        }
+      },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
     },
     "web": {
       "output": "static",
@@ -36,6 +49,12 @@
         "expo-camera",
         {
           "cameraPermission": "Permite a Pokédex usar la cámara para escanear códigos QR y de barras."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Permite a Pokédex acceder a tu ubicación para mostrarte Pokémon cercanos."
         }
       ],
       [
