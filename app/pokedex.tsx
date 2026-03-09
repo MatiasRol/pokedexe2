@@ -126,6 +126,13 @@ export default function PokedexScreen() {
                 >
                   <Text className="text-white font-bold text-base">📷 QR</Text>
                 </TouchableOpacity>
+                {/* ── Mapa ── */}
+                <TouchableOpacity
+                  onPress={() => router.push('/pokemon-map')}
+                  className="bg-blue-600 px-3 py-3 rounded-2xl border-2 border-blue-800 shadow-lg"
+                >
+                  <Text className="text-white font-bold text-base">🗺️</Text>
+                </TouchableOpacity>
                 {/* ── Tienda ── */}
                 <TouchableOpacity
                   onPress={() => router.push('/checkout')}
@@ -310,7 +317,6 @@ export default function PokedexScreen() {
         </View>
       </ScrollView>
 
-      {/* ══════════════ MODAL QR ══════════════ */}
       <Modal
         visible={qrModalVisible}
         transparent
@@ -353,7 +359,6 @@ export default function PokedexScreen() {
         </View>
       </Modal>
 
-      {/* ══════════════ PANEL LATERAL IA ══════════════ */}
       {iaVisible && (
         <Animated.View
           style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: SCREEN_WIDTH * 0.7, transform: [{ translateX: slideAnim }] }}
