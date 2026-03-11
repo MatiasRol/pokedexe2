@@ -1,7 +1,7 @@
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import MapView, { Callout, Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { FEATURE_CONFIG, getSpawnedPokemon } from '@/lib/modules/maps/services/locationPokemon';
 import { SpawnedPokemon } from '@/lib/core/types/location.types';
@@ -43,17 +43,30 @@ function useMapPokemon() {
 
 function PokemonCallout({ spawn }: { spawn: SpawnedPokemon }) {
   const config = FEATURE_CONFIG[spawn.featureType];
+  const typeColor = getTypeHex(spawn.pokemon.types[0]?.type.name);
   return (
-    <View style={{ width: 140 }} className="bg-white rounded-2xl p-3 items-center shadow-lg border border-gray-100">
+    <View style={{
+      width: 150, backgroundColor: 'white', borderRadius: 16,
+      padding: 12, alignItems: 'center',
+      shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.15, shadowRadius: 8, elevation: 5,
+      borderWidth: 2, borderColor: typeColor,
+    }}>
       <Image
         source={{ uri: spawn.pokemon.sprites.other['official-artwork'].front_default ?? spawn.pokemon.sprites.front_default }}
-        style={{ width: 64, height: 64 }}
+        style={{ width: 70, height: 70 }}
         resizeMode="contain"
       />
-      <Text className="text-gray-800 font-bold text-sm capitalize mt-1">{spawn.pokemon.name}</Text>
-      <Text className="text-gray-400 text-xs mt-0.5">{config.emoji} {spawn.locationName}</Text>
-      <View className="bg-gray-100 rounded-full px-3 py-0.5 mt-1">
-        <Text className="text-gray-500 text-xs capitalize">{spawn.pokemon.types[0]?.type.name}</Text>
+      <Text style={{ color: '#111827', fontWeight: '800', fontSize: 13, textTransform: 'capitalize', marginTop: 4 }}>
+        {spawn.pokemon.name}
+      </Text>
+      <Text style={{ color: '#6B7280', fontSize: 11, marginTop: 2 }}>
+        {config.emoji} {spawn.locationName}
+      </Text>
+      <View style={{ backgroundColor: typeColor, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3, marginTop: 6 }}>
+        <Text style={{ color: 'white', fontSize: 10, fontWeight: '700', textTransform: 'capitalize' }}>
+          {spawn.pokemon.types[0]?.type.name}
+        </Text>
       </View>
     </View>
   );
@@ -66,38 +79,76 @@ export default function PokemonMapScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-gray-950 items-center justify-center px-8">
-        <Text className="text-6xl mb-5">🗺️</Text>
-        <ActivityIndicator size="large" color="#10b981" />
-        <Text className="text-white font-semibold text-lg mt-5">{phase}</Text>
-        <Text className="text-gray-500 text-sm mt-2 text-center">Usando datos reales de OpenStreetMap</Text>
+      <View style={{ flex: 1, backgroundColor: '#030712', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+        <Text style={{ fontSize: 56, marginBottom: 24 }}>🗺️</Text>
+        <ActivityIndicator size="large" color="#10B981" />
+        <Text style={{ color: 'white', fontWeight: '700', fontSize: 17, marginTop: 20 }}>{phase}</Text>
+        <Text style={{ color: '#6B7280', fontSize: 13, marginTop: 8, textAlign: 'center', lineHeight: 20 }}>
+          Usando coordenadas reales{'\n'}de OpenStreetMap
+        </Text>
+
+        {/* Progress steps */}
+        <View style={{ marginTop: 32, gap: 10 }}>
+          {['Obteniendo ubicación…', 'Buscando lugares cercanos…', 'Cargando Pokémon…'].map((step, i) => {
+            const steps = ['Obteniendo ubicación…', 'Buscando lugares cercanos…', 'Cargando Pokémon…'];
+            const currentIdx = steps.indexOf(phase);
+            const done = i < currentIdx;
+            const active = i === currentIdx;
+            return (
+              <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <View style={{
+                  width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: done ? '#10B981' : active ? '#065F46' : '#1F2937',
+                  borderWidth: 1.5, borderColor: done ? '#10B981' : active ? '#10B981' : '#374151',
+                }}>
+                  <Text style={{ fontSize: 10, color: done || active ? 'white' : '#6B7280', fontWeight: '700' }}>
+                    {done ? '✓' : String(i + 1)}
+                  </Text>
+                </View>
+                <Text style={{ color: active ? '#10B981' : done ? '#6EE7B7' : '#374151', fontSize: 13, fontWeight: active ? '700' : '400' }}>
+                  {step}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
       </View>
     );
   }
 
   if (error || !coords) {
     return (
-      <View className="flex-1 bg-gray-950 items-center justify-center px-8">
-        <Text className="text-5xl mb-4">📍</Text>
-        <Text className="text-white text-xl font-bold text-center mb-2">{error ?? 'No se pudo obtener la ubicación'}</Text>
-        <Text className="text-gray-400 text-sm text-center mb-8">Asegúrate de tener el GPS activado.</Text>
-        <TouchableOpacity onPress={refresh} className="bg-emerald-600 px-8 py-4 rounded-2xl">
-          <Text className="text-white font-bold">🔄 Reintentar</Text>
+      <View style={{ flex: 1, backgroundColor: '#030712', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 }}>
+        <Text style={{ fontSize: 48, marginBottom: 16 }}>📍</Text>
+        <Text style={{ color: 'white', fontSize: 19, fontWeight: '700', textAlign: 'center', marginBottom: 8 }}>
+          {error ?? 'No se pudo obtener la ubicación'}
+        </Text>
+        <Text style={{ color: '#6B7280', fontSize: 14, textAlign: 'center', marginBottom: 32, lineHeight: 20 }}>
+          Asegúrate de tener el GPS activado y los permisos otorgados.
+        </Text>
+        <TouchableOpacity
+          onPress={refresh}
+          style={{ backgroundColor: '#10B981', paddingHorizontal: 32, paddingVertical: 14, borderRadius: 18, marginBottom: 12 }}
+        >
+          <Text style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>🔄 Reintentar</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.back()} className="mt-4">
-          <Text className="text-gray-400">← Volver</Text>
+        <TouchableOpacity onPress={() => router.back()} style={{ paddingVertical: 12 }}>
+          <Text style={{ color: '#6B7280', fontSize: 14 }}>← Volver</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-gray-950">
+    <View style={{ flex: 1, backgroundColor: '#030712' }}>
       <MapView
         ref={mapRef}
         style={{ flex: 1 }}
         provider={PROVIDER_GOOGLE}
-        initialRegion={{ latitude: coords.lat, longitude: coords.lng, latitudeDelta: 0.018, longitudeDelta: 0.018 }}
+        initialRegion={{
+          latitude: coords.lat, longitude: coords.lng,
+          latitudeDelta: 0.018, longitudeDelta: 0.018,
+        }}
         showsUserLocation
         showsMyLocationButton={false}
         customMapStyle={darkMapStyle}
@@ -105,47 +156,105 @@ export default function PokemonMapScreen() {
         <Circle
           center={{ latitude: coords.lat, longitude: coords.lng }}
           radius={1000}
-          fillColor="rgba(16,185,129,0.07)"
-          strokeColor="rgba(16,185,129,0.5)"
+          fillColor="rgba(16,185,129,0.06)"
+          strokeColor="rgba(16,185,129,0.45)"
           strokeWidth={1.5}
         />
         {spawns.map((spawn, i) => (
           <Marker
             key={`${spawn.pokemon.id}-${i}`}
             coordinate={{ latitude: spawn.lat, longitude: spawn.lng }}
-            onPress={() => router.push({ pathname: '/pokedex', params: { pokemonId: spawn.pokemon.id } })}
+            onPress={() => router.push(`/pokedex?pokemonId=${spawn.pokemon.id}`)}
           >
-            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'white', borderWidth: 2, borderColor: getTypeHex(spawn.pokemon.types[0]?.type.name), alignItems: 'center', justifyContent: 'center' }}>
-              <Image source={{ uri: spawn.pokemon.sprites.other['official-artwork'].front_default ?? spawn.pokemon.sprites.front_default }} style={{ width: 36, height: 36 }} resizeMode="contain" />
+            <View style={{
+              width: 52, height: 52, borderRadius: 26,
+              backgroundColor: 'white',
+              borderWidth: 2.5,
+              borderColor: getTypeHex(spawn.pokemon.types[0]?.type.name),
+              alignItems: 'center', justifyContent: 'center',
+              shadowColor: getTypeHex(spawn.pokemon.types[0]?.type.name),
+              shadowOpacity: 0.5, shadowRadius: 6, elevation: 4,
+            }}>
+              <Image
+                source={{ uri: spawn.pokemon.sprites.other['official-artwork'].front_default ?? spawn.pokemon.sprites.front_default }}
+                style={{ width: 40, height: 40 }}
+                resizeMode="contain"
+              />
             </View>
             <Callout tooltip><PokemonCallout spawn={spawn} /></Callout>
           </Marker>
         ))}
       </MapView>
 
-      <View style={{ position: 'absolute', top: 52, left: 16, right: 16 }} className="flex-row justify-between items-center">
-        <TouchableOpacity onPress={() => router.back()} className="bg-gray-900/90 rounded-full w-11 h-11 items-center justify-center border border-white/10">
-          <Text className="text-white text-lg">←</Text>
+      {/* Header flotante */}
+      <View style={{
+        position: 'absolute', top: 52, left: 16, right: 16,
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+      }}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={{
+            backgroundColor: 'rgba(3,7,18,0.85)', borderRadius: 20, width: 44, height: 44,
+            alignItems: 'center', justifyContent: 'center',
+            borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+          }}
+        >
+          <Text style={{ color: 'white', fontSize: 18 }}>←</Text>
         </TouchableOpacity>
-        <View className="bg-gray-900/90 rounded-2xl px-4 py-2 border border-white/10">
-          <Text className="text-white font-bold text-sm">{spawns.length} Pokémon cercanos</Text>
+
+        <View style={{
+          backgroundColor: 'rgba(3,7,18,0.85)', borderRadius: 20,
+          paddingHorizontal: 16, paddingVertical: 10,
+          borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+        }}>
+          <Text style={{ color: 'white', fontWeight: '700', fontSize: 13 }}>
+            🎮 {spawns.length} Pokémon cercanos
+          </Text>
         </View>
-        <TouchableOpacity onPress={refresh} className="bg-emerald-600/90 rounded-full w-11 h-11 items-center justify-center border border-emerald-800">
-          <Text className="text-white text-lg">🔄</Text>
+
+        <TouchableOpacity
+          onPress={refresh}
+          style={{
+            backgroundColor: 'rgba(16,185,129,0.85)', borderRadius: 20, width: 44, height: 44,
+            alignItems: 'center', justifyContent: 'center',
+            borderWidth: 1, borderColor: 'rgba(16,185,129,0.4)',
+          }}
+        >
+          <Text style={{ fontSize: 18 }}>🔄</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }} className="bg-gray-950/95 rounded-t-3xl px-5 pt-4 pb-8 border-t border-white/10">
-        <Text className="text-white font-bold text-base mb-3">Zonas detectadas cerca de ti</Text>
-        <View className="flex-row flex-wrap gap-2">
+      {/* Panel inferior */}
+      <View style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        backgroundColor: 'rgba(3,7,18,0.96)', borderTopLeftRadius: 28, borderTopRightRadius: 28,
+        paddingHorizontal: 20, paddingTop: 16, paddingBottom: 36,
+        borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.08)',
+      }}>
+        {/* Handle */}
+        <View style={{ width: 36, height: 4, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 2, alignSelf: 'center', marginBottom: 14 }} />
+
+        <Text style={{ color: 'white', fontWeight: '800', fontSize: 15, marginBottom: 12 }}>
+          Zonas detectadas cerca de ti
+        </Text>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
           {[...new Set(spawns.map(s => s.featureType))].map(ft => (
-            <View key={ft} className="flex-row items-center gap-1 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
-              <Text>{FEATURE_CONFIG[ft].emoji}</Text>
-              <Text className="text-gray-300 text-xs">{FEATURE_CONFIG[ft].label}</Text>
+            <View key={ft} style={{
+              flexDirection: 'row', alignItems: 'center', gap: 6,
+              backgroundColor: 'rgba(255,255,255,0.06)',
+              borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+              paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
+            }}>
+              <Text style={{ fontSize: 15 }}>{FEATURE_CONFIG[ft].emoji}</Text>
+              <Text style={{ color: '#D1D5DB', fontSize: 12, fontWeight: '600' }}>{FEATURE_CONFIG[ft].label}</Text>
             </View>
           ))}
-        </View>
-        <Text className="text-gray-600 text-xs mt-3">📍 Datos de OpenStreetMap · Toca un Pokémon para verlo</Text>
+        </ScrollView>
+
+        <Text style={{ color: '#374151', fontSize: 11, marginTop: 14 }}>
+          📡 Datos de OpenStreetMap · Toca un Pokémon para verlo
+        </Text>
       </View>
     </View>
   );

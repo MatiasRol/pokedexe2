@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import { useRef, useState } from 'react';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Animated,
@@ -24,6 +24,8 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 
 export default function PokedexScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+
   const { pokemon, loading, error, setPokemonId } = usePokemon(25);
   const [searchInput, setSearchInput] = useState('');
   const [favorites, setFavorites] = useState<number[]>([]);
@@ -35,16 +37,28 @@ export default function PokedexScreen() {
 
   const slideAnim = useRef(new Animated.Value(SCREEN_WIDTH)).current;
 
+  // ── FIX: useFocusEffect lee params CADA VEZ que la pantalla recibe foco
+  // Esto resuelve el caso donde el pokédex ya estaba montado en el stack
+  // y router.push desde el mapa no remonta el componente
+  useFocusEffect(
+    useCallback(() => {
+      const id = params.pokemonId;
+      if (id) {
+        setPokemonId(Number(id));
+      }
+    }, [params.pokemonId])
+  );
+
   const toggleIA = () => {
     if (iaVisible) {
       Animated.timing(slideAnim, {
-        toValue: SCREEN_WIDTH, duration: 400,
+        toValue: SCREEN_WIDTH, duration: 350,
         useNativeDriver: true, easing: Easing.out(Easing.cubic),
       }).start(() => setIaVisible(false));
     } else {
       setIaVisible(true);
       Animated.timing(slideAnim, {
-        toValue: 0, duration: 400,
+        toValue: 0, duration: 350,
         useNativeDriver: true, easing: Easing.out(Easing.cubic),
       }).start();
     }
@@ -103,86 +117,98 @@ export default function PokedexScreen() {
   const isFavorite = pokemon && favorites.includes(pokemon.id);
 
   return (
-    <View className="flex-1 bg-red-600">
-      <ScrollView className="flex-1">
-        <View className="p-4 max-w-2xl mx-auto w-full">
+    <View style={{ flex: 1, backgroundColor: '#CC0000' }}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
+        <View style={{ paddingHorizontal: 16, paddingBottom: 32, maxWidth: 520, alignSelf: 'center', width: '100%' }}>
 
-          {/* HEADER */}
-          <View className="bg-gradient-to-b from-red-600 to-red-700 rounded-3xl shadow-2xl p-6 mb-2 mt-8 border-4 border-red-800">
-            <View className="flex-row items-center gap-3 mb-4">
-              <View className="w-16 h-16 bg-blue-400 rounded-full border-4 border-blue-600 shadow-lg" />
-              <View className="w-4 h-4 bg-red-400 rounded-full border-2 border-red-600" />
-              <View className="w-4 h-4 bg-yellow-400 rounded-full border-2 border-yellow-600" />
-              <View className="w-4 h-4 bg-green-400 rounded-full border-2 border-green-600" />
+          {/* ── HEADER ── */}
+          <View style={{
+            backgroundColor: '#B00000',
+            borderRadius: 24,
+            padding: 20,
+            marginTop: 52,
+            marginBottom: 16,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.3,
+            shadowRadius: 8,
+            elevation: 8,
+          }}>
+            {/* Pokédex decorative dots */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 8 }}>
+              <View style={{ width: 48, height: 48, backgroundColor: '#3B9EDB', borderRadius: 24, borderWidth: 3, borderColor: '#1E6FA6', shadowColor: '#3B9EDB', shadowOpacity: 0.5, shadowRadius: 6, elevation: 4 }} />
+              <View style={{ width: 12, height: 12, backgroundColor: '#FF6B6B', borderRadius: 6, borderWidth: 2, borderColor: '#CC4444' }} />
+              <View style={{ width: 12, height: 12, backgroundColor: '#FFD93D', borderRadius: 6, borderWidth: 2, borderColor: '#CCA800' }} />
+              <View style={{ width: 12, height: 12, backgroundColor: '#6BCB77', borderRadius: 6, borderWidth: 2, borderColor: '#3A8A44' }} />
             </View>
 
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-3xl font-bold text-white drop-shadow-lg">POKÉDEX</Text>
-              <View className="flex-row gap-2">
-                {/* ── Escáner QR ── */}
-                <TouchableOpacity
-                  onPress={() => router.push('/qr-scanner')}
-                  className="bg-emerald-600 px-4 py-3 rounded-2xl border-2 border-emerald-800 shadow-lg"
-                >
-                  <Text className="text-white font-bold text-base">📷 QR</Text>
-                </TouchableOpacity>
-                {/* ── Mapa ── */}
-                <TouchableOpacity
-                  onPress={() => router.push('/pokemon-map')}
-                  className="bg-blue-600 px-3 py-3 rounded-2xl border-2 border-blue-800 shadow-lg"
-                >
-                  <Text className="text-white font-bold text-base">🗺️</Text>
-                </TouchableOpacity>
-                {/* ── Tienda ── */}
-                <TouchableOpacity
-                  onPress={() => router.push('/checkout')}
-                  className="bg-amber-500 px-4 py-3 rounded-2xl border-2 border-amber-700 shadow-lg"
-                >
-                  <Text className="text-white font-bold text-base">🛒</Text>
-                </TouchableOpacity>
-                {/* ── IA ── */}
-                <TouchableOpacity
-                  onPress={toggleIA}
-                  className="bg-purple-600 px-4 py-3 rounded-2xl border-2 border-purple-800 shadow-lg"
-                >
-                  <Text className="text-white font-bold text-base">🤖</Text>
-                </TouchableOpacity>
-                {/* Favoritos */}
-                <View className="flex-row items-center gap-1 bg-pink-500 px-3 py-3 rounded-2xl border-2 border-pink-700 shadow-lg">
-                  <Text className="text-white text-sm">❤️</Text>
-                  <Text className="font-bold text-white text-sm">{favorites.length}</Text>
+            {/* Title row */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <Text style={{ fontSize: 26, fontWeight: '900', color: 'white', letterSpacing: 2 }}>POKÉDEX</Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <HeaderButton onPress={() => router.push('/qr-scanner')} color="#16A34A" label="📷" />
+                <HeaderButton onPress={() => router.push('/pokemon-map')} color="#2563EB" label="🗺️" />
+                <HeaderButton onPress={() => router.push('/checkout')} color="#D97706" label="🛒" />
+                <HeaderButton onPress={toggleIA} color="#7C3AED" label="🤖" />
+                <View style={{ backgroundColor: '#DB2777', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={{ fontSize: 14 }}>❤️</Text>
+                  <Text style={{ color: 'white', fontWeight: '700', fontSize: 13 }}>{favorites.length}</Text>
                 </View>
               </View>
             </View>
 
-            <View className="flex-row gap-2">
+            {/* Search */}
+            <View style={{ flexDirection: 'row', gap: 8 }}>
               <TextInput
                 value={searchInput}
                 onChangeText={setSearchInput}
                 onSubmitEditing={handleSearch}
                 placeholder="Buscar por nombre o #ID"
                 placeholderTextColor="#9CA3AF"
-                className="flex-1 px-5 py-4 bg-white rounded-2xl border-3 border-gray-300 font-semibold text-base shadow-md"
+                style={{
+                  flex: 1,
+                  paddingHorizontal: 16,
+                  paddingVertical: 12,
+                  backgroundColor: 'white',
+                  borderRadius: 14,
+                  fontSize: 15,
+                  fontWeight: '600',
+                  color: '#111',
+                }}
               />
               <TouchableOpacity
                 onPress={handleSearch}
-                className="bg-blue-500 px-6 py-4 rounded-2xl border-2 border-blue-700 shadow-lg items-center justify-center"
+                style={{ backgroundColor: '#2563EB', paddingHorizontal: 18, borderRadius: 14, justifyContent: 'center', alignItems: 'center' }}
               >
-                <Text className="text-white font-bold text-xl">🔍</Text>
+                <Text style={{ fontSize: 18 }}>🔍</Text>
               </TouchableOpacity>
             </View>
           </View>
 
-          {/* PANTALLA PRINCIPAL */}
-          <View className="bg-gray-800 rounded-3xl shadow-2xl p-6 border-4 border-gray-900">
-            <View className="bg-green-100 rounded-2xl p-4 border-4 border-green-900 shadow-inner">
+          {/* ── PANTALLA PRINCIPAL ── */}
+          <View style={{
+            backgroundColor: '#1F1F1F',
+            borderRadius: 24,
+            padding: 4,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.4,
+            shadowRadius: 12,
+            elevation: 10,
+          }}>
+            <View style={{
+              backgroundColor: '#C8F5C8',
+              borderRadius: 20,
+              padding: 16,
+              minHeight: 400,
+            }}>
               {loading && <LoadingSpinner />}
 
               {error && (
-                <View className="items-center py-12">
-                  <Text className="text-red-700 font-bold text-xl mb-4">⚠️ {error}</Text>
-                  <TouchableOpacity onPress={handleRandom} className="bg-red-600 px-6 py-3 rounded-2xl border-2 border-red-800">
-                    <Text className="text-white font-bold">🎲 Pokémon Aleatorio</Text>
+                <View style={{ alignItems: 'center', paddingVertical: 48 }}>
+                  <Text style={{ color: '#B91C1C', fontWeight: '700', fontSize: 16, marginBottom: 16 }}>⚠️ {error}</Text>
+                  <TouchableOpacity onPress={handleRandom} style={{ backgroundColor: '#CC0000', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 14 }}>
+                    <Text style={{ color: 'white', fontWeight: '700' }}>🎲 Pokémon Aleatorio</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -190,97 +216,123 @@ export default function PokedexScreen() {
               {!loading && !error && pokemon && (
                 <View>
                   {/* Imagen */}
-                  <View className="bg-white rounded-3xl p-6 mb-4 relative shadow-lg border-2 border-gray-300">
+                  <View style={{
+                    backgroundColor: 'white',
+                    borderRadius: 20,
+                    padding: 20,
+                    marginBottom: 12,
+                    alignItems: 'center',
+                    position: 'relative',
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 8,
+                    elevation: 3,
+                  }}>
                     <TouchableOpacity
                       onPress={toggleFavorite}
-                      className="absolute top-3 right-3 bg-pink-100 rounded-full p-3 shadow-lg z-10 border-2 border-pink-300"
+                      style={{
+                        position: 'absolute', top: 12, right: 12,
+                        backgroundColor: isFavorite ? '#FEE2E2' : '#F9FAFB',
+                        borderRadius: 20, padding: 8, zIndex: 10,
+                        borderWidth: 1.5, borderColor: isFavorite ? '#FCA5A5' : '#E5E7EB',
+                      }}
                     >
-                      <Text className="text-3xl">{isFavorite ? '❤️' : '🤍'}</Text>
+                      <Text style={{ fontSize: 22 }}>{isFavorite ? '❤️' : '🤍'}</Text>
                     </TouchableOpacity>
                     <Image
                       source={{ uri: pokemon.sprites.other['official-artwork'].front_default }}
-                      style={{ width: 240, height: 240 }}
-                      className="mx-auto"
+                      style={{ width: 220, height: 220 }}
                       resizeMode="contain"
                     />
                   </View>
 
-                  {/* Info */}
-                  <View className="items-center mb-4 bg-white rounded-2xl p-4 shadow-md border-2 border-gray-300">
-                    <Text className="text-gray-600 font-bold text-lg">
+                  {/* Info básica */}
+                  <View style={{
+                    backgroundColor: 'white', borderRadius: 20,
+                    padding: 16, marginBottom: 12, alignItems: 'center',
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
+                  }}>
+                    <Text style={{ color: '#9CA3AF', fontWeight: '700', fontSize: 13, letterSpacing: 1 }}>
                       #{String(pokemon.id).padStart(3, '0')}
                     </Text>
-                    <Text className="text-4xl font-bold text-gray-900 capitalize mb-3">
+                    <Text style={{ fontSize: 32, fontWeight: '900', color: '#111827', textTransform: 'capitalize', marginTop: 2, marginBottom: 10 }}>
                       {pokemon.name}
                     </Text>
-                    <View className="flex-row gap-2 mb-4">
+                    <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
                       {pokemon.types.map(type => (
                         <TypeBadge key={type.type.name} type={type.type.name} />
                       ))}
                     </View>
 
-                    {/* ── Botones de acción ── */}
-                    <View className="w-full flex-row gap-2 mb-2">
-                      {/* Ver QR del Pokémon */}
-                      <TouchableOpacity
-                        onPress={() => setQrModalVisible(true)}
-                        className="flex-1 bg-emerald-500 py-3 rounded-2xl items-center border-2 border-emerald-700"
-                      >
-                        <Text className="text-white font-bold text-sm">📱 Ver QR</Text>
-                      </TouchableOpacity>
-                      {/* Comprar */}
-                      <TouchableOpacity
-                        onPress={() => router.push('/checkout')}
-                        className="flex-1 bg-amber-500 py-3 rounded-2xl items-center border-2 border-amber-700"
-                      >
-                        <Text className="text-white font-bold text-sm">🛒 Comprar</Text>
-                      </TouchableOpacity>
+                    {/* Botones de acción */}
+                    <View style={{ width: '100%', flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+                      <ActionButton onPress={() => setQrModalVisible(true)} color="#059669" label="📱 Ver QR" />
+                      <ActionButton onPress={() => router.push('/checkout')} color="#D97706" label="🛒 Comprar" />
                     </View>
-
-                    {/* Preguntar a la IA */}
                     <TouchableOpacity
                       onPress={() => {
                         toggleIA();
                         setMessages([{ role: 'ai', text: `¡Hola! Puedo responder preguntas sobre ${pokemon.name}. ¿Qué quieres saber?` }]);
                       }}
-                      className="bg-purple-600 p-3 rounded-2xl items-center w-full border-2 border-purple-800"
+                      style={{
+                        backgroundColor: '#7C3AED', paddingVertical: 11, borderRadius: 14,
+                        alignItems: 'center', width: '100%',
+                      }}
                     >
-                      <Text className="text-white font-bold text-sm">
-                        🤖 Pregunta a la IA sobre {pokemon.name}
+                      <Text style={{ color: 'white', fontWeight: '700', fontSize: 13 }}>
+                        🤖 Pregunta sobre {pokemon.name}
                       </Text>
                     </TouchableOpacity>
                   </View>
 
-                  {/* Estadísticas */}
-                  <View className="bg-blue-50 rounded-2xl p-5 mb-4 border-2 border-blue-200">
-                    <Text className="text-xl font-bold text-blue-900 mb-3">⚡ Estadísticas</Text>
+                  {/* Stats */}
+                  <View style={{
+                    backgroundColor: 'white', borderRadius: 20,
+                    padding: 16, marginBottom: 12,
+                    shadowColor: '#000', shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
+                  }}>
+                    <Text style={{ fontSize: 16, fontWeight: '800', color: '#1E40AF', marginBottom: 12 }}>⚡ Estadísticas</Text>
                     {pokemon.stats.map(stat => (
                       <StatBar key={stat.stat.name} name={stat.stat.name} value={stat.base_stat} />
                     ))}
                   </View>
 
                   {/* Info adicional */}
-                  <View className="flex-row gap-3 mb-4">
+                  <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
                     {[
-                      { icon: '⚖️', val: `${(pokemon.weight / 10).toFixed(1)}`, unit: 'KG', bg: 'bg-yellow-100', border: 'border-yellow-300' },
-                      { icon: '📏', val: `${(pokemon.height / 10).toFixed(1)}`, unit: 'M',  bg: 'bg-green-100',  border: 'border-green-300' },
-                      { icon: '✨', val: `${pokemon.abilities.length}`, unit: 'HAB', bg: 'bg-purple-100', border: 'border-purple-300' },
+                      { icon: '⚖️', val: `${(pokemon.weight / 10).toFixed(1)}`, unit: 'KG', bg: '#FEF9C3', border: '#FDE047' },
+                      { icon: '📏', val: `${(pokemon.height / 10).toFixed(1)}`, unit: 'M',  bg: '#DCFCE7', border: '#86EFAC' },
+                      { icon: '✨', val: `${pokemon.abilities.length}`, unit: 'HAB', bg: '#F3E8FF', border: '#D8B4FE' },
                     ].map(({ icon, val, unit, bg, border }) => (
-                      <View key={unit} className={`flex-1 ${bg} rounded-2xl p-4 items-center border-2 ${border}`}>
-                        <Text className="text-3xl mb-1">{icon}</Text>
-                        <Text className="text-2xl font-bold text-gray-800">{val}</Text>
-                        <Text className="text-xs text-gray-600 font-bold">{unit}</Text>
+                      <View key={unit} style={{
+                        flex: 1, backgroundColor: bg, borderRadius: 16,
+                        padding: 14, alignItems: 'center',
+                        borderWidth: 1.5, borderColor: border,
+                      }}>
+                        <Text style={{ fontSize: 24, marginBottom: 4 }}>{icon}</Text>
+                        <Text style={{ fontSize: 20, fontWeight: '800', color: '#111827' }}>{val}</Text>
+                        <Text style={{ fontSize: 11, color: '#6B7280', fontWeight: '700', letterSpacing: 0.5 }}>{unit}</Text>
                       </View>
                     ))}
                   </View>
 
                   {/* Habilidades */}
-                  <View className="bg-orange-50 rounded-2xl p-4 mb-4 border-2 border-orange-200">
-                    <Text className="text-sm font-bold text-orange-900 mb-2">🎯 Habilidades:</Text>
-                    <View className="flex-row flex-wrap gap-2">
+                  <View style={{
+                    backgroundColor: '#FFF7ED', borderRadius: 20,
+                    padding: 14, marginBottom: 12,
+                    borderWidth: 1.5, borderColor: '#FED7AA',
+                  }}>
+                    <Text style={{ fontSize: 13, fontWeight: '800', color: '#92400E', marginBottom: 8 }}>🎯 Habilidades</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                       {pokemon.abilities.map(ability => (
-                        <View key={ability.ability.name} className="bg-orange-200 px-4 py-2 rounded-xl border border-orange-400">
-                          <Text className="text-orange-900 text-sm font-bold capitalize">
+                        <View key={ability.ability.name} style={{
+                          backgroundColor: '#FED7AA', paddingHorizontal: 14, paddingVertical: 6,
+                          borderRadius: 20, borderWidth: 1, borderColor: '#FDBA74',
+                        }}>
+                          <Text style={{ color: '#92400E', fontSize: 12, fontWeight: '700', textTransform: 'capitalize' }}>
                             {ability.ability.name.replace('-', ' ')}
                           </Text>
                         </View>
@@ -289,21 +341,29 @@ export default function PokedexScreen() {
                   </View>
 
                   {/* Navegación */}
-                  <View className="flex-row gap-2 mb-6">
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
                     <TouchableOpacity
                       onPress={handlePrevious} disabled={pokemon.id <= 1}
-                      className={`flex-1 py-4 rounded-2xl items-center border-2 ${pokemon.id <= 1 ? 'bg-gray-300 border-gray-400' : 'bg-blue-500 border-blue-700'}`}
+                      style={{
+                        flex: 1, paddingVertical: 14, borderRadius: 16, alignItems: 'center',
+                        backgroundColor: pokemon.id <= 1 ? '#E5E7EB' : '#2563EB',
+                      }}
                     >
-                      <Text className={`font-bold ${pokemon.id <= 1 ? 'text-gray-500' : 'text-white'}`}>← Anterior</Text>
+                      <Text style={{ fontWeight: '700', color: pokemon.id <= 1 ? '#9CA3AF' : 'white' }}>← Anterior</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={handleRandom} className="flex-1 bg-green-500 py-4 rounded-2xl items-center border-2 border-green-700">
-                      <Text className="text-white font-bold">🎲 Aleatorio</Text>
+                    <TouchableOpacity onPress={handleRandom} style={{
+                      flex: 1, backgroundColor: '#16A34A', paddingVertical: 14, borderRadius: 16, alignItems: 'center',
+                    }}>
+                      <Text style={{ color: 'white', fontWeight: '700' }}>🎲 Aleatorio</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={handleNext} disabled={pokemon.id >= 1000}
-                      className={`flex-1 py-4 rounded-2xl items-center border-2 ${pokemon.id >= 1000 ? 'bg-gray-300 border-gray-400' : 'bg-blue-500 border-blue-700'}`}
+                      style={{
+                        flex: 1, paddingVertical: 14, borderRadius: 16, alignItems: 'center',
+                        backgroundColor: pokemon.id >= 1000 ? '#E5E7EB' : '#2563EB',
+                      }}
                     >
-                      <Text className={`font-bold ${pokemon.id >= 1000 ? 'text-gray-500' : 'text-white'}`}>Siguiente →</Text>
+                      <Text style={{ fontWeight: '700', color: pokemon.id >= 1000 ? '#9CA3AF' : 'white' }}>Siguiente →</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -311,106 +371,173 @@ export default function PokedexScreen() {
             </View>
           </View>
 
-          <View className="items-center mt-6 pb-8">
-            <Text className="text-white text-xs opacity-90">{favorites.length} Pokémon favoritos</Text>
+          <View style={{ alignItems: 'center', marginTop: 20 }}>
+            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12 }}>
+              {favorites.length} Pokémon favoritos · Pokédex v2
+            </Text>
           </View>
         </View>
       </ScrollView>
 
-      <Modal
-        visible={qrModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setQrModalVisible(false)}
-      >
-        <View className="flex-1 bg-black/70 items-center justify-center px-6">
-          <View className="bg-gray-900 rounded-3xl p-6 w-full items-center border border-white/10">
-            {/* Header modal */}
-            <View className="flex-row justify-between items-center w-full mb-5">
-              <Text className="text-white text-lg font-bold">QR de {pokemon?.name}</Text>
+      {/* ── MODAL QR ── */}
+      <Modal visible={qrModalVisible} transparent animationType="fade" onRequestClose={() => setQrModalVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
+          <View style={{
+            backgroundColor: '#111827', borderRadius: 28, padding: 24,
+            width: '100%', alignItems: 'center',
+            borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+          }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: 20 }}>
+              <Text style={{ color: 'white', fontSize: 16, fontWeight: '700' }}>QR de {pokemon?.name}</Text>
               <TouchableOpacity
                 onPress={() => setQrModalVisible(false)}
-                className="bg-white/10 rounded-full w-9 h-9 items-center justify-center"
+                style={{ backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 20, width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}
               >
-                <Text className="text-white font-bold">✕</Text>
+                <Text style={{ color: 'white', fontWeight: '700' }}>✕</Text>
               </TouchableOpacity>
             </View>
 
-            {pokemon && (
-              <PokemonQR
-                pokemonId={pokemon.id}
-                pokemonName={pokemon.name}
-                size={200}
-              />
-            )}
+            {pokemon && <PokemonQR pokemonId={pokemon.id} pokemonName={pokemon.name} size={200} />}
 
-            <Text className="text-gray-400 text-xs mt-4 text-center leading-relaxed">
+            <Text style={{ color: '#6B7280', fontSize: 12, marginTop: 16, textAlign: 'center', lineHeight: 18 }}>
               Escanea este código con la app para{'\n'}cargar directamente este Pokémon
             </Text>
 
-            {/* Botón escanear */}
             <TouchableOpacity
               onPress={() => { setQrModalVisible(false); router.push('/qr-scanner'); }}
-              className="bg-emerald-600 mt-4 px-8 py-3 rounded-2xl border border-emerald-800 w-full items-center"
+              style={{
+                backgroundColor: '#059669', marginTop: 16, paddingVertical: 12,
+                borderRadius: 16, width: '100%', alignItems: 'center',
+              }}
             >
-              <Text className="text-white font-bold">📷 Abrir Escáner</Text>
+              <Text style={{ color: 'white', fontWeight: '700' }}>📷 Abrir Escáner</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
+      {/* ── PANEL IA ── */}
       {iaVisible && (
         <Animated.View
-          style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: SCREEN_WIDTH * 0.7, transform: [{ translateX: slideAnim }] }}
-          className="bg-white shadow-2xl rounded-l-3xl p-4 border-l-4 border-blue-900"
+          style={{
+            position: 'absolute', right: 0, top: 0, bottom: 0,
+            width: SCREEN_WIDTH * 0.78,
+            transform: [{ translateX: slideAnim }],
+            backgroundColor: '#FAFAFA',
+            shadowColor: '#000', shadowOffset: { width: -4, height: 0 },
+            shadowOpacity: 0.25, shadowRadius: 16, elevation: 20,
+            borderTopLeftRadius: 24, borderBottomLeftRadius: 24,
+          }}
         >
-          <View className="flex-row justify-between items-center mb-4 bg-blue-800 rounded-2xl p-3 border-2 border-blue-900">
-            <Text className="text-xl font-bold text-white">🤖 IA</Text>
-            <TouchableOpacity onPress={toggleIA} className="bg-red-500 rounded-full w-8 h-8 items-center justify-center border-2 border-red-700">
-              <Text className="text-white font-bold text-lg">✖</Text>
+          {/* Header IA */}
+          <View style={{
+            backgroundColor: '#4C1D95', padding: 16, paddingTop: 52,
+            borderTopLeftRadius: 24, flexDirection: 'row',
+            justifyContent: 'space-between', alignItems: 'center',
+          }}>
+            <Text style={{ color: 'white', fontSize: 16, fontWeight: '800' }}>🤖 Asistente IA</Text>
+            <TouchableOpacity
+              onPress={toggleIA}
+              style={{ backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 18, width: 36, height: 36, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Text style={{ color: 'white', fontWeight: '700' }}>✕</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView className="flex-1 mb-3 bg-white rounded-2xl p-3 border-2 border-gray-300">
+          {/* Mensajes */}
+          <ScrollView style={{ flex: 1, padding: 12 }} showsVerticalScrollIndicator={false}>
             {messages.length === 0 && (
-              <View className="items-center justify-center py-8">
-                <Text className="text-4xl mb-2">🤖</Text>
-                <Text className="text-gray-500 text-center font-semibold">¡Hola! Pregunta sobre Pokémon</Text>
+              <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+                <Text style={{ fontSize: 40, marginBottom: 8 }}>🤖</Text>
+                <Text style={{ color: '#6B7280', textAlign: 'center', fontWeight: '600' }}>¡Hola! Pregunta sobre Pokémon</Text>
               </View>
             )}
             {messages.map((msg, i) => (
-              <View key={i} className={`my-2 px-4 py-3 rounded-2xl max-w-[85%] ${msg.role === 'user' ? 'bg-purple-600 self-end border-2 border-purple-800' : 'bg-gray-100 self-start border-2 border-gray-300'}`}>
-                <Text className={msg.role === 'user' ? 'text-white font-medium' : 'text-gray-900 font-medium'}>
-                  {msg.text}
-                </Text>
+              <View key={i} style={{
+                marginVertical: 4,
+                alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
+                maxWidth: '88%',
+              }}>
+                <View style={{
+                  backgroundColor: msg.role === 'user' ? '#7C3AED' : '#F3F4F6',
+                  paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18,
+                  borderBottomRightRadius: msg.role === 'user' ? 4 : 18,
+                  borderBottomLeftRadius: msg.role === 'user' ? 18 : 4,
+                }}>
+                  <Text style={{ color: msg.role === 'user' ? 'white' : '#111827', fontSize: 13, lineHeight: 19 }}>
+                    {msg.text}
+                  </Text>
+                </View>
               </View>
             ))}
             {iaLoading && (
-              <View className="self-start bg-gray-200 px-4 py-3 rounded-2xl my-2 border-2 border-gray-300">
-                <ActivityIndicator color="#7c3aed" />
+              <View style={{ alignSelf: 'flex-start', backgroundColor: '#F3F4F6', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 18, marginVertical: 4 }}>
+                <ActivityIndicator size="small" color="#7C3AED" />
               </View>
             )}
           </ScrollView>
 
-          <View className="flex-row gap-2">
+          {/* Input */}
+          <View style={{
+            padding: 12, paddingBottom: 24, borderTopWidth: 1, borderTopColor: '#E5E7EB',
+            flexDirection: 'row', gap: 8,
+          }}>
             <TextInput
               value={currentMessage}
               onChangeText={setCurrentMessage}
               onSubmitEditing={enviarMensaje}
-              placeholder="Escribe tu pregunta..."
+              placeholder="Pregunta algo..."
               placeholderTextColor="#9CA3AF"
-              className="flex-1 bg-white border-2 border-purple-300 rounded-2xl px-4 py-3 font-medium"
+              style={{
+                flex: 1, backgroundColor: '#F3F4F6', borderRadius: 20,
+                paddingHorizontal: 16, paddingVertical: 10, fontSize: 13,
+                color: '#111', borderWidth: 1, borderColor: '#E5E7EB',
+              }}
             />
             <TouchableOpacity
               onPress={enviarMensaje}
               disabled={!currentMessage.trim() || iaLoading}
-              className={`px-5 py-3 rounded-2xl border-2 ${!currentMessage.trim() || iaLoading ? 'bg-gray-400 border-gray-500' : 'bg-purple-600 border-purple-800'}`}
+              style={{
+                width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: !currentMessage.trim() || iaLoading ? '#D1D5DB' : '#7C3AED',
+              }}
             >
-              <Text className="text-white font-bold text-xl">{iaLoading ? '⏳' : '➤'}</Text>
+              <Text style={{ color: 'white', fontWeight: '700', fontSize: 16 }}>{iaLoading ? '⏳' : '➤'}</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
       )}
     </View>
+  );
+}
+
+// ── Componentes pequeños auxiliares ──────────────────────────────────────────
+
+function HeaderButton({ onPress, color, label }: { onPress: () => void; color: string; label: string }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={{
+        backgroundColor: color, borderRadius: 12,
+        paddingHorizontal: 12, paddingVertical: 8,
+        alignItems: 'center', justifyContent: 'center',
+      }}
+    >
+      <Text style={{ fontSize: 16 }}>{label}</Text>
+    </TouchableOpacity>
+  );
+}
+
+function ActionButton({ onPress, color, label }: { onPress: () => void; color: string; label: string }) {
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      style={{
+        flex: 1, backgroundColor: color, paddingVertical: 11,
+        borderRadius: 14, alignItems: 'center',
+      }}
+    >
+      <Text style={{ color: 'white', fontWeight: '700', fontSize: 13 }}>{label}</Text>
+    </TouchableOpacity>
   );
 }
