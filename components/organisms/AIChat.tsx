@@ -7,10 +7,9 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
-
-import { askGemini } from '../services/gemini';
+import { askGemini } from '@/lib/modules/ai/services/gemini';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -23,34 +22,25 @@ interface AIChatProps {
 }
 
 export default function AIChat({ pokemonName, pokemonTypes }: AIChatProps) {
-  const [messages, setMessages] = useState<Message[]>([] as Message[]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const scrollViewRef = useRef<ScrollView>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput]       = useState('');
+  const [loading, setLoading]   = useState(false);
+  const scrollViewRef           = useRef<ScrollView>(null);
 
-  // MENSAJE DE BIENVENIDA
   useEffect(() => {
     if (messages.length === 0) {
-      const welcomeMessage = pokemonName
+      const welcome = pokemonName
         ? `¡Hola! Soy tu asistente Pokémon. Puedo responder preguntas sobre ${pokemonName} o cualquier otro Pokémon. ¿Qué quieres saber?`
         : '¡Hola! Soy tu asistente Pokémon. ¿Qué quieres saber sobre Pokémon?';
-
-      setMessages([{ role: 'assistant', content: welcomeMessage } as Message]);
+      setMessages([{ role: 'assistant', content: welcome }]);
     }
   }, [pokemonName]);
 
-  // ENVIAR MENSAJE
   const handleSend = async () => {
     if (!input.trim() || loading) return;
-
     const userMessage = input.trim();
     setInput('');
-
-    const newMessages: Message[] = [
-      ...messages,
-      { role: 'user', content: userMessage } as Message
-    ];
-
+    const newMessages: Message[] = [...messages, { role: 'user', content: userMessage }];
     setMessages(newMessages);
     setLoading(true);
 
@@ -58,35 +48,20 @@ export default function AIChat({ pokemonName, pokemonTypes }: AIChatProps) {
       const context = pokemonName
         ? `Pokémon actual: ${pokemonName} (Tipos: ${pokemonTypes?.join(', ')})`
         : undefined;
-
       const response = await askGemini(userMessage, context);
-
-      setMessages([
-        ...newMessages,
-        { role: 'assistant', content: response } as Message
-      ]);
+      setMessages([...newMessages, { role: 'assistant', content: response }]);
     } catch (error: any) {
-      const errorMessage =
-        error.message || 'Lo siento, hubo un error al procesar tu pregunta.';
-
       setMessages([
         ...newMessages,
-        {
-          role: 'assistant',
-          content:
-            `❌ ${errorMessage}\n\nPor favor verifica:\n• Tu API Key esté correctamente configurada\n• Tengas conexión a internet\n• No hayas excedido la cuota`
-        } as Message
+        { role: 'assistant', content: `❌ ${error.message ?? 'Error al procesar tu pregunta.'}` },
       ]);
     } finally {
       setLoading(false);
     }
   };
 
-  // AUTO SCROLL
   useEffect(() => {
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
+    setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
   }, [messages]);
 
   return (
@@ -99,7 +74,6 @@ export default function AIChat({ pokemonName, pokemonTypes }: AIChatProps) {
           <Text className="text-white text-xl font-bold text-center">
             🤖 Asistente Pokémon IA
           </Text>
-
           {pokemonName && (
             <Text className="text-white text-sm text-center mt-1 opacity-90">
               Pregúntame sobre {pokemonName}
@@ -107,43 +81,19 @@ export default function AIChat({ pokemonName, pokemonTypes }: AIChatProps) {
           )}
         </View>
 
-        {/* LISTA DE MENSAJES */}
-        <ScrollView
-          ref={scrollViewRef}
-          className="flex-1 p-4"
-          showsVerticalScrollIndicator={false}
-        >
+        <ScrollView ref={scrollViewRef} className="flex-1 p-4" showsVerticalScrollIndicator={false}>
           {messages.map((message, index) => (
-            <View
-              key={index}
-              className={`mb-3 ${
-                message.role === 'user' ? 'items-end' : 'items-start'
-              }`}
-            >
-              <View
-                className={`max-w-[80%] p-3 rounded-2xl ${
-                  message.role === 'user'
-                    ? 'bg-purple-500'
-                    : 'bg-gray-200'
-                }`}
-              >
-                <Text
-                  className={
-                    message.role === 'user'
-                      ? 'text-white'
-                      : 'text-gray-800'
-                  }
-                >
+            <View key={index} className={`mb-3 ${message.role === 'user' ? 'items-end' : 'items-start'}`}>
+              <View className={`max-w-[80%] p-3 rounded-2xl ${message.role === 'user' ? 'bg-purple-500' : 'bg-gray-200'}`}>
+                <Text className={message.role === 'user' ? 'text-white' : 'text-gray-800'}>
                   {message.content}
                 </Text>
               </View>
-
               <Text className="text-xs text-gray-400 mt-1 px-2">
                 {message.role === 'user' ? 'Tú' : 'Asistente IA'}
               </Text>
             </View>
           ))}
-
           {loading && (
             <View className="items-start mb-3">
               <View className="bg-gray-200 p-3 rounded-2xl flex-row items-center gap-2">
@@ -154,7 +104,6 @@ export default function AIChat({ pokemonName, pokemonTypes }: AIChatProps) {
           )}
         </ScrollView>
 
-        {/* INPUT */}
         <View className="border-t border-gray-200 p-4">
           <View className="flex-row gap-2">
             <TextInput
@@ -167,7 +116,6 @@ export default function AIChat({ pokemonName, pokemonTypes }: AIChatProps) {
               maxLength={500}
               editable={!loading}
             />
-
             <TouchableOpacity
               onPress={handleSend}
               disabled={!input.trim() || loading}

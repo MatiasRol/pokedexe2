@@ -1,16 +1,5 @@
-/**
- * 🔐 ESQUEMAS DE VALIDACIÓN CON ZOD
- * ===================================
- * 
- * Validación estricta de formularios de autenticación
- * - Email con formato válido
- * - Contraseña con requisitos de seguridad
- * - Confirmación de contraseña
- */
-
 import { z } from 'zod';
 
-// Esquema de validación para Login
 export const LoginSchema = z.object({
   email: z
     .string()
@@ -22,7 +11,6 @@ export const LoginSchema = z.object({
     .min(6, 'La contraseña debe tener al menos 6 caracteres'),
 });
 
-// Esquema de validación para Registro
 export const RegistroSchema = z
   .object({
     nombre: z
@@ -40,15 +28,12 @@ export const RegistroSchema = z
       .min(6, 'La contraseña debe tener al menos 6 caracteres')
       .regex(/[A-Z]/, 'La contraseña debe contener al menos una mayúscula')
       .regex(/[0-9]/, 'La contraseña debe contener al menos un número'),
-    confirmPassword: z
-      .string()
-      .min(1, 'Debe confirmar la contraseña'),
+    confirmPassword: z.string().min(1, 'Debe confirmar la contraseña'),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Las contraseñas no coinciden',
     path: ['confirmPassword'],
   });
 
-// Tipos TypeScript derivados de los esquemas
-export type LoginFormData = z.infer<typeof LoginSchema>;
+export type LoginFormData    = z.infer<typeof LoginSchema>;
 export type RegistroFormData = z.infer<typeof RegistroSchema>;

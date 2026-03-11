@@ -13,11 +13,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import LoadingSpinner from '../components/LoadingSpinner';
-import PokemonQR from '../components/PokemonQR';
-import StatBar from '../components/StatBar';
-import TypeBadge from '../components/TypeBadge';
-import { usePokemon } from '../hooks/usePokemon';
+import LoadingSpinner from '../components/atoms/LoadingSpinner';
+import StatBar from '../components/atoms/StatBar';
+import TypeBadge from '../components/atoms/TypeBadge';
+import PokemonQR from '../components/molecules/PokemonQR';
+import { usePokemon } from '../lib/modules/pokemon/hooks/usePokemon';
 
 const API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY;
 const SCREEN_WIDTH = Dimensions.get('window').width;

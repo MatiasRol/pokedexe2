@@ -1,4 +1,4 @@
-import { View, Text, TextInput, TextInputProps } from 'react-native';
+import { Text, TextInput, TextInputProps, View } from 'react-native';
 
 interface CustomInputProps extends TextInputProps {
   label: string;
@@ -19,12 +19,7 @@ export default function CustomInput({
 }: CustomInputProps) {
   return (
     <View className="mb-4">
-      {/* Label */}
-      <Text className="text-white font-bold text-base mb-2 ml-1">
-        {label}
-      </Text>
-
-      {/* Input */}
+      <Text className="text-white font-bold text-base mb-2 ml-1">{label}</Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -36,13 +31,9 @@ export default function CustomInput({
         }`}
         {...props}
       />
-
-      {/* Error Message */}
       {error && (
         <View className="mt-2 bg-red-100 px-3 py-2 rounded-xl border border-red-300">
-          <Text className="text-red-700 text-sm font-semibold">
-            ⚠️ {error}
-          </Text>
+          <Text className="text-red-700 text-sm font-semibold">⚠️ {error}</Text>
         </View>
       )}
     </View>

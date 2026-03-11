@@ -73,6 +73,9 @@ export default {
           },
         },
       ],
+      [
+      "expo-web-browser"
+      ],
       "expo-secure-store",
     ],
     experiments: {
