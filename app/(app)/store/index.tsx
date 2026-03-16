@@ -1,14 +1,14 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
-  Animated,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Animated,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 
 // Tipos de tarjeta
@@ -115,7 +115,7 @@ export default function CheckoutScreen() {
     // Simulación del proceso de pago (en producción: llamar tu backend → Stripe)
     setTimeout(() => {
       router.replace({
-        pathname: '/payment-success',
+        pathname: '/(app)/store/success',
         params: {
           amount: total.toFixed(2),
           last4: card.number.replace(/\s/g, '').slice(-4),

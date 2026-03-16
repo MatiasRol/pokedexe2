@@ -1,6 +1,3 @@
-import CustomInput from '@/components/molecules/CustomInput';
-import { LoginFormData, LoginSchema } from '@/lib/core/schemas/authSchemas';
-import { saveSession } from '@/lib/modules/auth/auth.service';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -11,6 +8,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { LoginFormData, LoginSchema } from '@/lib/core/schemas/authSchemas';
+import CustomInput from '@/components/molecules/CustomInput';
+import { saveSession } from '@/lib/modules/auth/auth.service';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -27,17 +27,10 @@ export default function LoginScreen() {
     try {
       setIsSubmitting(true);
       setErrors({});
-
-      // 1. Validar con Zod
       LoginSchema.parse(formData);
-
-      // 2. Guardar sesión real en AsyncStorage
-      const name = formData.email.split('@')[0]; // nombre del email como display name
+      const name = formData.email.split('@')[0];
       await saveSession(formData.email, name);
-
-      // 3. Navegar al Pokédex
-      router.replace('/pokedex');
-
+      router.replace('/(app)/pokedex');
     } catch (error: any) {
       if (error.errors) {
         const newErrors: Partial<Record<keyof LoginFormData, string>> = {};
@@ -56,13 +49,9 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-red-600"
     >
-      <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         <View className="flex-1 justify-center px-6 py-12">
-          {/* Header */}
+
           <View className="items-center mb-10">
             <View className="bg-white rounded-full w-28 h-28 items-center justify-center mb-4 shadow-2xl">
               <Text className="text-6xl">🔐</Text>
@@ -71,8 +60,7 @@ export default function LoginScreen() {
             <Text className="text-white text-lg opacity-90">Inicia sesión en tu cuenta</Text>
           </View>
 
-          {/* Formulario */}
-          <View className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 border-2 border-white/20 shadow-2xl">
+          <View className="bg-white/10 rounded-3xl p-6 border-2 border-white/20 shadow-2xl">
             <CustomInput
               label="Correo Electrónico"
               placeholder="ejemplo@correo.com"
@@ -105,7 +93,7 @@ export default function LoginScreen() {
 
             <View className="flex-row justify-center items-center mt-6">
               <Text className="text-white text-base mr-2">¿No tienes cuenta?</Text>
-              <TouchableOpacity onPress={() => router.push('/auth/registro')}>
+              <TouchableOpacity onPress={() => router.push('/(auth)/registro')}>
                 <Text className="text-yellow-300 font-bold text-base underline">Regístrate</Text>
               </TouchableOpacity>
             </View>

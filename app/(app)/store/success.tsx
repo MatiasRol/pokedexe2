@@ -85,14 +85,14 @@ export default function PaymentSuccessScreen() {
 
         {/* Acciones */}
         <TouchableOpacity
-          onPress={() => router.replace('/pokedex')}
+          onPress={() => router.replace('/(app)/pokedex')}
           className="bg-white w-full py-4 rounded-2xl items-center shadow-lg mb-3"
         >
           <Text className="text-emerald-700 font-bold text-lg">🎮 Volver al Pokédex</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => router.replace('/checkout')}
+          onPress={() => router.replace('/(app)/store')}
           className="border-2 border-white/40 w-full py-4 rounded-2xl items-center"
         >
           <Text className="text-white font-semibold">Hacer otra compra</Text>
