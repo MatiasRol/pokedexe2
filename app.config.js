@@ -2,6 +2,7 @@ export default {
   expo: {
     name: "pokedexe2",
     slug: "pokedexe2",
+    owner: "matiasrol",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
@@ -10,6 +11,7 @@ export default {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
+      bundleIdentifier: "com.matiasrol.pokedexe2",
       config: {
         googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY,
       },
@@ -21,6 +23,8 @@ export default {
       },
     },
     android: {
+      package: "com.matiasrol.pokedexe2",
+      googleServicesFile: "./google-services.json",
       adaptiveIcon: {
         backgroundColor: "#E6F4FE",
         foregroundImage: "./assets/images/android-icon-foreground.png",
@@ -73,20 +77,24 @@ export default {
           },
         },
       ],
-      [
-      "expo-web-browser"
-      ],
+      ["expo-web-browser"],
       "expo-secure-store",
-      
-        ["expo-notifications", {
-          "icon": "./assets/images/icon.png",
-          "color": "#EF4444"
-        }]
-      
+      [
+        "expo-notifications",
+        {
+          icon: "./assets/images/icon.png",
+          color: "#EF4444",
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,
       reactCompiler: true,
+    },
+    extra: {
+      eas: {
+        projectId: "cd917cde-ab83-491c-a71f-04e377c55a4b",
+      },
     },
   },
 };

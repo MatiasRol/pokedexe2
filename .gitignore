@@ -43,3 +43,7 @@ app-example
 # generated native folders
 /ios
 /android
+
+eas.json
+google-services.json
+notificacionesap-6c79c-firebase-adminsdk-fbsvc-8ac929bf84.json
