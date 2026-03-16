@@ -1,28 +1,29 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
 } from 'react-native';
 
 // ── Atoms & Molecules ──────────────────────────────────────────────────────
 import LoadingSpinner from '@/components/atoms/LoadingSpinner';
-import StatBar from '@/components/atoms/StatBar';
-import TypeBadge from '@/components/atoms/TypeBadge';
-import QRModal from '@/components/molecules/QRModal';
+import StatBar        from '@/components/atoms/StatBar';
+import TypeBadge      from '@/components/atoms/TypeBadge';
+import QRModal        from '@/components/molecules/QRModal';
 
 // ── Organisms ─────────────────────────────────────────────────────────────
 import IAPanelLateral from '@/components/organisms/IAPanelLateral';
 
 // ── Hooks & Services ──────────────────────────────────────────────────────
-import { clearSession } from '@/lib/modules/auth/auth.service';
+import { usePokemon }      from '@/lib/modules/pokemon/hooks/usePokemon';
+import { useFavorites }    from '@/lib/modules/pokemon/hooks/useFavorites';
 import { useNotifications } from '@/lib/modules/notifications/useNotifications';
-import { useFavorites } from '@/lib/modules/pokemon/hooks/useFavorites';
-import { usePokemon } from '@/lib/modules/pokemon/hooks/usePokemon';
+
 
 export default function PokedexScreen() {
   const router = useRouter();
@@ -65,10 +66,7 @@ export default function PokedexScreen() {
     setIaVisible(true);
   };
 
-  const handleLogout = async () => {
-    await clearSession();
-    router.replace('/auth/login');
-  };
+  const handleProfile = () => router.push('/profile');
 
   // ── Render ────────────────────────────────────────────────────────────
 
@@ -108,8 +106,8 @@ export default function PokedexScreen() {
                   <Text className="text-white text-xs">❤️</Text>
                   <Text className="font-bold text-white text-xs">{favorites.length}</Text>
                 </View>
-                <TouchableOpacity onPress={handleLogout} className="bg-gray-600 px-3 py-2 rounded-2xl border-2 border-gray-700">
-                  <Text className="text-white font-bold text-sm">🚪</Text>
+                <TouchableOpacity onPress={handleProfile} className="bg-gray-600 px-3 py-2 rounded-2xl border-2 border-gray-700">
+                  <Text className="text-white font-bold text-sm">👤</Text>
                 </TouchableOpacity>
               </View>
             </View>
