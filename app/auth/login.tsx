@@ -1,3 +1,6 @@
+import CustomInput from '@/components/molecules/CustomInput';
+import { LoginFormData, LoginSchema } from '@/lib/core/schemas/authSchemas';
+import { saveSession } from '@/lib/modules/auth/auth.service';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -8,13 +11,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { LoginFormData, LoginSchema } from '@/lib/core/schemas/authSchemas';
-import CustomInput from '@/components/molecules/CustomInput';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const [formData, setFormData]   = useState<LoginFormData>({ email: '', password: '' });
-  const [errors, setErrors]       = useState<Partial<Record<keyof LoginFormData, string>>>({});
+  const [formData, setFormData]         = useState<LoginFormData>({ email: '', password: '' });
+  const [errors, setErrors]             = useState<Partial<Record<keyof LoginFormData, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const updateField = (field: keyof LoginFormData, value: string) => {
@@ -26,8 +27,17 @@ export default function LoginScreen() {
     try {
       setIsSubmitting(true);
       setErrors({});
+
+      // 1. Validar con Zod
       LoginSchema.parse(formData);
-      router.push('/pokedex');
+
+      // 2. Guardar sesión real en AsyncStorage
+      const name = formData.email.split('@')[0]; // nombre del email como display name
+      await saveSession(formData.email, name);
+
+      // 3. Navegar al Pokédex
+      router.replace('/pokedex');
+
     } catch (error: any) {
       if (error.errors) {
         const newErrors: Partial<Record<keyof LoginFormData, string>> = {};
@@ -46,8 +56,13 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-red-600"
     >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View className="flex-1 justify-center px-6 py-12">
+          {/* Header */}
           <View className="items-center mb-10">
             <View className="bg-white rounded-full w-28 h-28 items-center justify-center mb-4 shadow-2xl">
               <Text className="text-6xl">🔐</Text>
@@ -56,7 +71,8 @@ export default function LoginScreen() {
             <Text className="text-white text-lg opacity-90">Inicia sesión en tu cuenta</Text>
           </View>
 
-          <View className="bg-white/10 rounded-3xl p-6 border-2 border-white/20">
+          {/* Formulario */}
+          <View className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 border-2 border-white/20 shadow-2xl">
             <CustomInput
               label="Correo Electrónico"
               placeholder="ejemplo@correo.com"
@@ -68,12 +84,13 @@ export default function LoginScreen() {
             />
             <CustomInput
               label="Contraseña"
-              placeholder="Ingresa tu contraseña"
+              placeholder="Mínimo 6 caracteres"
               value={formData.password}
               onChangeText={t => updateField('password', t)}
               error={errors.password}
               secureTextEntry
             />
+
             <TouchableOpacity
               onPress={handleSubmit}
               disabled={isSubmitting}
@@ -85,6 +102,7 @@ export default function LoginScreen() {
                 {isSubmitting ? '⏳ Iniciando...' : '🚀 Iniciar Sesión'}
               </Text>
             </TouchableOpacity>
+
             <View className="flex-row justify-center items-center mt-6">
               <Text className="text-white text-base mr-2">¿No tienes cuenta?</Text>
               <TouchableOpacity onPress={() => router.push('/auth/registro')}>
