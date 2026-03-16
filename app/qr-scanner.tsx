@@ -1,17 +1,18 @@
+import { useNotifications } from '@/lib/modules/notifications/useNotifications';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import {
-    Animated,
-    Dimensions,
-    Linking,
-    Text,
-    TouchableOpacity,
-    Vibration,
-    View,
+  Animated,
+  Dimensions,
+  Linking,
+  Text,
+  TouchableOpacity,
+  Vibration,
+  View,
 } from 'react-native';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 const FRAME_SIZE = width * 0.72;
 
 type ScanResult = {
@@ -23,25 +24,20 @@ export default function QRScannerScreen() {
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
-  const [result, setResult] = useState<ScanResult | null>(null);
-  const [torch, setTorch] = useState(false);
+  const [result, setResult]   = useState<ScanResult | null>(null);
+  const [torch, setTorch]     = useState(false);
 
-  // Animación de la línea de escaneo
+  // ── Notificaciones ────────────────────────────────────────────────────────
+  const { notifyQRScanned } = useNotifications();
+
+  // ── Animación de la línea de escaneo ──────────────────────────────────────
   const scanLineAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(scanLineAnim, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(scanLineAnim, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
+        Animated.timing(scanLineAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
+        Animated.timing(scanLineAnim, { toValue: 0, duration: 2000, useNativeDriver: true }),
       ])
     );
     loop.start();
@@ -53,10 +49,13 @@ export default function QRScannerScreen() {
     outputRange: [0, FRAME_SIZE - 4],
   });
 
-  const handleBarCodeScanned = ({ type, data }: { type: string; data: string }) => {
+  // ── Handlers ──────────────────────────────────────────────────────────────
+
+  const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
     if (scanned) return;
     setScanned(true);
     Vibration.vibrate(120);
+    await notifyQRScanned(data); // 🔔 Notificación de QR escaneado
     setResult({ type, data });
   };
 
@@ -64,20 +63,15 @@ export default function QRScannerScreen() {
     if (!result) return;
     const data = result.data;
 
-    // Si es una URL, abrirla
     if (data.startsWith('http://') || data.startsWith('https://')) {
       Linking.openURL(data);
       return;
     }
-
-    // Si parece un ID de Pokémon (pokemon:25 o solo número)
     if (data.startsWith('pokemon:')) {
       const id = data.replace('pokemon:', '');
       router.push({ pathname: '/pokedex', params: { pokemonId: id } });
       return;
     }
-
-    // Ir a checkout con el dato
     router.push({ pathname: '/checkout', params: { scannedData: data } });
   };
 
@@ -85,6 +79,8 @@ export default function QRScannerScreen() {
     setScanned(false);
     setResult(null);
   };
+
+  // ── Permisos ──────────────────────────────────────────────────────────────
 
   if (!permission) {
     return (
@@ -117,9 +113,10 @@ export default function QRScannerScreen() {
     );
   }
 
+  // ── Render principal ──────────────────────────────────────────────────────
+
   return (
     <View className="flex-1 bg-black">
-      {/* Cámara */}
       <CameraView
         style={{ flex: 1 }}
         facing="back"
@@ -133,7 +130,6 @@ export default function QRScannerScreen() {
           ],
         }}
       >
-        {/* Overlay oscuro */}
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' }}>
 
           {/* Header */}
@@ -157,26 +153,19 @@ export default function QRScannerScreen() {
 
           {/* Marco central */}
           <View className="flex-1 items-center justify-center">
-            <View
-              style={{ width: FRAME_SIZE, height: FRAME_SIZE }}
-              className="relative"
-            >
+            <View style={{ width: FRAME_SIZE, height: FRAME_SIZE }} className="relative">
+
               {/* Esquinas del marco */}
               {[
-                { top: 0, left: 0, borderTopWidth: 4, borderLeftWidth: 4 },
-                { top: 0, right: 0, borderTopWidth: 4, borderRightWidth: 4 },
-                { bottom: 0, left: 0, borderBottomWidth: 4, borderLeftWidth: 4 },
+                { top: 0,    left: 0,  borderTopWidth: 4,    borderLeftWidth: 4  },
+                { top: 0,    right: 0, borderTopWidth: 4,    borderRightWidth: 4 },
+                { bottom: 0, left: 0,  borderBottomWidth: 4, borderLeftWidth: 4  },
                 { bottom: 0, right: 0, borderBottomWidth: 4, borderRightWidth: 4 },
               ].map((corner, i) => (
                 <View
                   key={i}
                   style={[
-                    {
-                      position: 'absolute',
-                      width: 36,
-                      height: 36,
-                      borderColor: scanned ? '#10b981' : '#fff',
-                    },
+                    { position: 'absolute', width: 36, height: 36, borderColor: scanned ? '#10b981' : '#fff' },
                     corner,
                   ]}
                 />
@@ -186,14 +175,9 @@ export default function QRScannerScreen() {
               {!scanned && (
                 <Animated.View
                   style={{
-                    position: 'absolute',
-                    left: 4,
-                    right: 4,
-                    height: 2,
+                    position: 'absolute', left: 4, right: 4, height: 2,
                     backgroundColor: '#10b981',
-                    shadowColor: '#10b981',
-                    shadowOpacity: 0.9,
-                    shadowRadius: 6,
+                    shadowColor: '#10b981', shadowOpacity: 0.9, shadowRadius: 6,
                     transform: [{ translateY: scanLineTranslate }],
                   }}
                 />
@@ -215,7 +199,6 @@ export default function QRScannerScreen() {
           {/* Panel de resultado */}
           {result && (
             <View className="mx-4 mb-8 bg-gray-900/95 rounded-3xl p-5 border border-white/10">
-              {/* Badge tipo */}
               <View className="flex-row items-center gap-2 mb-3">
                 <View className="bg-emerald-500/20 border border-emerald-500 px-3 py-1 rounded-full">
                   <Text className="text-emerald-400 text-xs font-bold uppercase">
@@ -225,22 +208,17 @@ export default function QRScannerScreen() {
                 <Text className="text-gray-400 text-xs">Escaneado</Text>
               </View>
 
-              {/* Dato */}
-              <Text
-                numberOfLines={3}
-                className="text-white text-base font-medium mb-4 leading-relaxed"
-              >
+              <Text numberOfLines={3} className="text-white text-base font-medium mb-4 leading-relaxed">
                 {result.data}
               </Text>
 
-              {/* Acciones */}
               <View className="flex-row gap-2">
                 <TouchableOpacity
                   onPress={handleAction}
                   className="flex-1 bg-emerald-500 py-3 rounded-2xl items-center border border-emerald-700"
                 >
                   <Text className="text-white font-bold">
-                    {result.data.startsWith('http') ? '🌐 Abrir URL' :
+                    {result.data.startsWith('http')     ? '🌐 Abrir URL'   :
                      result.data.startsWith('pokemon:') ? '🎮 Ver Pokémon' :
                      '💳 Ir a Pago'}
                   </Text>
