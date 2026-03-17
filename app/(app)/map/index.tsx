@@ -1,4 +1,5 @@
 import CaptureModal from '@/components/molecules/CaptureModal';
+import { setupAudio } from '@/lib/core/audio/sounds';
 import { getTypeHex } from '@/lib/core/constants/colors';
 import { POKEBALL_CONFIG, PokeballType } from '@/lib/core/types/game.types';
 import { SpawnedPokemon } from '@/lib/core/types/location.types';
@@ -28,6 +29,8 @@ function useMapPokemon() {
   const [error, setError]     = useState<string | null>(null);
 
   const { notifyMapPokemon } = useNotifications();
+
+  useEffect(() => { setupAudio(); }, []);
 
   const load = async () => {
     setLoading(true);
@@ -178,12 +181,16 @@ export default function MapScreen() {
       <View style={{ position: 'absolute', top: 52, left: 16, right: 16 }}
         className="flex-row justify-between items-center"
       >
-        {/* Pokébolas disponibles */}
-        <View className="bg-gray-900/90 rounded-2xl px-3 py-2 border border-white/10 flex-row gap-2">
+        {/* Pokébolas disponibles — imágenes reales */}
+        <View className="bg-gray-900/90 rounded-2xl px-3 py-2 border border-white/10 flex-row gap-3">
           {(Object.keys(POKEBALL_CONFIG) as PokeballType[]).map(type => (
             <View key={type} className="items-center">
-              <Text className="text-base">{POKEBALL_CONFIG[type].emoji}</Text>
-              <Text className="text-white text-xs font-bold">{inventory.pokeballs[type]}</Text>
+              <Image
+                source={{ uri: POKEBALL_CONFIG[type].imageUrl }}
+                style={{ width: 28, height: 28 }}
+                resizeMode="contain"
+              />
+              <Text className="text-white text-xs font-bold mt-0.5">{inventory.pokeballs[type]}</Text>
             </View>
           ))}
         </View>

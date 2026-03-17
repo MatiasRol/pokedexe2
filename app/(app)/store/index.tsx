@@ -1,3 +1,4 @@
+import { SoundService } from '@/lib/core/audio/sounds';
 import { POKEBALL_CONFIG, PokeballType } from '@/lib/core/types/game.types';
 import { useInventory } from '@/lib/modules/game/useInventory';
 import { useRouter } from 'expo-router';
@@ -71,6 +72,7 @@ export default function StoreScreen() {
 
   const handleBuyPokeball = (type: PokeballType, qty: number) => {
     const ok = buyPokeball(type, qty);
+    if (ok) SoundService.purchase(); else SoundService.tap();
     showFeedback(ok
       ? `✅ Compraste ${qty} ${POKEBALL_CONFIG[type].label}(s)`
       : '❌ No tienes suficientes monedas');
@@ -85,6 +87,7 @@ export default function StoreScreen() {
 
   const handleSell = (uid: string, name: string, price: number) => {
     sellPokemon(uid);
+    SoundService.sell();
     showFeedback(`💰 Vendiste a ${name} por ${price} monedas`);
   };
 
