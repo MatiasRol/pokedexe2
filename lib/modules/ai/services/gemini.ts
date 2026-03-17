@@ -3,7 +3,7 @@ const API_KEY =
   'AIzaSyBhF2s61um8wje4aBKgZbguNEvKTQxzhRM';
 
 const GEMINI_URL =
-  'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+  'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 export async function askGemini(
   prompt: string,
