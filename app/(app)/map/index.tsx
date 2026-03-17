@@ -1,3 +1,11 @@
+import CaptureModal from '@/components/molecules/CaptureModal';
+import { getTypeHex } from '@/lib/core/constants/colors';
+import { POKEBALL_CONFIG, PokeballType } from '@/lib/core/types/game.types';
+import { SpawnedPokemon } from '@/lib/core/types/location.types';
+import { Pokemon } from '@/lib/core/types/pokemon.types';
+import { useInventory } from '@/lib/modules/game/useInventory';
+import { FEATURE_CONFIG, getSpawnedPokemon } from '@/lib/modules/maps/services/locationPokemon';
+import { useNotifications } from '@/lib/modules/notifications/useNotifications';
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
@@ -9,12 +17,8 @@ import {
   View,
 } from 'react-native';
 import MapView, { Callout, Circle, Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { FEATURE_CONFIG, getSpawnedPokemon } from '@/lib/modules/maps/services/locationPokemon';
-import { SpawnedPokemon }                    from '@/lib/core/types/location.types';
-import { getTypeHex }                        from '@/lib/core/constants/colors';
-import { useNotifications }                  from '@/lib/modules/notifications/useNotifications';
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
+// ─── Hook de mapa ─────────────────────────────────────────────────────────────
 
 function useMapPokemon() {
   const [coords, setCoords]   = useState<{ lat: number; lng: number } | null>(null);
@@ -37,14 +41,13 @@ function useMapPokemon() {
       const { latitude: lat, longitude: lng } = loc.coords;
       setCoords({ lat, lng });
 
-      setPhase('Buscando lugares cercanos…');
+      setPhase('Buscando Pokémon cercanos…');
       const result = await getSpawnedPokemon(lat, lng);
-      setPhase('Cargando Pokémon…');
       setSpawns(result);
 
       if (result.length > 0) {
-        const zonas    = [...new Set(result.map(s => s.featureType))];
-        const config   = FEATURE_CONFIG[zonas[0]];
+        const zonas  = [...new Set(result.map(s => s.featureType))];
+        const config = FEATURE_CONFIG[zonas[0]];
         await notifyMapPokemon(result.length, `${config.emoji} ${config.label}`);
       }
     } catch (err: any) {
@@ -58,103 +61,154 @@ function useMapPokemon() {
   return { coords, spawns, loading, phase, error, refresh: load };
 }
 
-// ─── Callout ──────────────────────────────────────────────────────────────────
-
-function PokemonCallout({ spawn }: { spawn: SpawnedPokemon }) {
-  const config = FEATURE_CONFIG[spawn.featureType];
-  return (
-    <View style={{ width: 140 }} className="bg-white rounded-2xl p-3 items-center shadow-lg border border-gray-100">
-      <Image
-        source={{ uri: spawn.pokemon.sprites.other['official-artwork'].front_default ?? spawn.pokemon.sprites.front_default }}
-        style={{ width: 64, height: 64 }}
-        resizeMode="contain"
-      />
-      <Text className="text-gray-800 font-bold text-sm capitalize mt-1">{spawn.pokemon.name}</Text>
-      <Text className="text-gray-400 text-xs mt-0.5">{config.emoji} {spawn.locationName}</Text>
-      <View className="bg-gray-100 rounded-full px-3 py-0.5 mt-1">
-        <Text className="text-gray-500 text-xs capitalize">{spawn.pokemon.types[0]?.type.name}</Text>
-      </View>
-    </View>
-  );
-}
-
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
 
 export default function MapScreen() {
-  const router = useRouter();
+  const router  = useRouter();
   const { coords, spawns, loading, phase, error, refresh } = useMapPokemon();
-  const mapRef = useRef<MapView>(null);
+  const { inventory, attemptCapture } = useInventory();
+  const mapRef  = useRef<MapView>(null);
 
+  // Estado del modal de captura
+  const [captureTarget, setCaptureTarget] = useState<Pokemon | null>(null);
+  const [modalVisible, setModalVisible]   = useState(false);
+
+  const handleMarkerPress = (pokemon: Pokemon) => {
+    setCaptureTarget(pokemon);
+    setModalVisible(true);
+  };
+
+  const handleCapture = (ballType: PokeballType) => {
+    if (!captureTarget) return 'fail' as const;
+    return attemptCapture(captureTarget, ballType);
+  };
+
+  // ── Cargando ──
   if (loading) {
     return (
       <View className="flex-1 bg-gray-950 items-center justify-center px-8">
         <Text className="text-6xl mb-5">🗺️</Text>
-        <ActivityIndicator size="large" color="#10b981" />
+        <ActivityIndicator size="large" color="#ef4444" />
         <Text className="text-white font-semibold text-lg mt-5">{phase}</Text>
-        <Text className="text-gray-500 text-sm mt-2 text-center">Usando datos reales de OpenStreetMap</Text>
+        <Text className="text-gray-500 text-sm mt-2 text-center">
+          Buscando Pokémon salvajes cerca de ti…
+        </Text>
       </View>
     );
   }
 
+  // ── Error ──
   if (error || !coords) {
     return (
       <View className="flex-1 bg-gray-950 items-center justify-center px-8">
         <Text className="text-5xl mb-4">📍</Text>
-        <Text className="text-white text-xl font-bold text-center mb-2">{error ?? 'No se pudo obtener la ubicación'}</Text>
-        <Text className="text-gray-400 text-sm text-center mb-8">Asegúrate de tener el GPS activado.</Text>
-        <TouchableOpacity onPress={refresh} className="bg-emerald-600 px-8 py-4 rounded-2xl">
+        <Text className="text-white text-xl font-bold text-center mb-2">
+          {error ?? 'No se pudo obtener la ubicación'}
+        </Text>
+        <Text className="text-gray-400 text-sm text-center mb-8">
+          Activa el GPS para encontrar Pokémon cercanos.
+        </Text>
+        <TouchableOpacity onPress={refresh} className="bg-red-600 px-8 py-4 rounded-2xl">
           <Text className="text-white font-bold">🔄 Reintentar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => router.back()} className="mt-4">
-          <Text className="text-gray-400">← Volver</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-gray-950">
+    <View className="flex-1">
       <MapView
         ref={mapRef}
         style={{ flex: 1 }}
         provider={PROVIDER_GOOGLE}
-        initialRegion={{ latitude: coords.lat, longitude: coords.lng, latitudeDelta: 0.018, longitudeDelta: 0.018 }}
+        initialRegion={{
+          latitude:      coords.lat,
+          longitude:     coords.lng,
+          latitudeDelta:  0.018,
+          longitudeDelta: 0.018,
+        }}
         showsUserLocation
         showsMyLocationButton={false}
-        customMapStyle={darkMapStyle}
       >
-        <Circle center={{ latitude: coords.lat, longitude: coords.lng }} radius={1000} fillColor="rgba(16,185,129,0.07)" strokeColor="rgba(16,185,129,0.5)" strokeWidth={1.5} />
+        {/* Radio de aparición */}
+        <Circle
+          center={{ latitude: coords.lat, longitude: coords.lng }}
+          radius={1000}
+          fillColor="rgba(239,68,68,0.07)"
+          strokeColor="rgba(239,68,68,0.4)"
+          strokeWidth={1.5}
+        />
 
+        {/* Pokémon salvajes */}
         {spawns.map((spawn, i) => (
           <Marker
             key={`${spawn.pokemon.id}-${i}`}
             coordinate={{ latitude: spawn.lat, longitude: spawn.lng }}
-            onPress={() => router.push({ pathname: '/(app)/pokedex', params: { pokemonId: spawn.pokemon.id } })}
+            onPress={() => handleMarkerPress(spawn.pokemon)}
           >
-            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: 'white', borderWidth: 2, borderColor: getTypeHex(spawn.pokemon.types[0]?.type.name), alignItems: 'center', justifyContent: 'center' }}>
-              <Image source={{ uri: spawn.pokemon.sprites.other['official-artwork'].front_default ?? spawn.pokemon.sprites.front_default }} style={{ width: 36, height: 36 }} resizeMode="contain" />
+            {/* Ícono animado del Pokémon */}
+            <View style={{
+              width: 52, height: 52, borderRadius: 26,
+              backgroundColor: 'white',
+              borderWidth: 2.5,
+              borderColor: getTypeHex(spawn.pokemon.types[0]?.type.name),
+              alignItems: 'center', justifyContent: 'center',
+              shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 4,
+            }}>
+              <Image
+                source={{ uri: spawn.pokemon.sprites.other['official-artwork'].front_default ?? spawn.pokemon.sprites.front_default }}
+                style={{ width: 40, height: 40 }}
+                resizeMode="contain"
+              />
             </View>
-            <Callout tooltip><PokemonCallout spawn={spawn} /></Callout>
+
+            {/* Callout con info rápida */}
+            <Callout tooltip>
+              <View style={{ width: 120 }} className="bg-white rounded-2xl p-2 items-center shadow-lg border border-gray-100">
+                <Text className="text-gray-800 font-bold text-xs capitalize">{spawn.pokemon.name}</Text>
+                <Text className="text-gray-400 text-xs mt-0.5">Toca para capturar</Text>
+                <Text className="text-red-500 text-lg mt-1">⚽</Text>
+              </View>
+            </Callout>
           </Marker>
         ))}
       </MapView>
 
-      {/* Botones flotantes */}
-      <View style={{ position: 'absolute', top: 52, left: 16, right: 16 }} className="flex-row justify-between items-center">
-        <TouchableOpacity onPress={() => router.back()} className="bg-gray-900/90 rounded-full w-11 h-11 items-center justify-center border border-white/10">
-          <Text className="text-white text-lg">←</Text>
-        </TouchableOpacity>
-        <View className="bg-gray-900/90 rounded-2xl px-4 py-2 border border-white/10">
-          <Text className="text-white font-bold text-sm">{spawns.length} Pokémon cercanos</Text>
+      {/* ── Header flotante ── */}
+      <View style={{ position: 'absolute', top: 52, left: 16, right: 16 }}
+        className="flex-row justify-between items-center"
+      >
+        {/* Pokébolas disponibles */}
+        <View className="bg-gray-900/90 rounded-2xl px-3 py-2 border border-white/10 flex-row gap-2">
+          {(Object.keys(POKEBALL_CONFIG) as PokeballType[]).map(type => (
+            <View key={type} className="items-center">
+              <Text className="text-base">{POKEBALL_CONFIG[type].emoji}</Text>
+              <Text className="text-white text-xs font-bold">{inventory.pokeballs[type]}</Text>
+            </View>
+          ))}
         </View>
-        <TouchableOpacity onPress={refresh} className="bg-emerald-600/90 rounded-full w-11 h-11 items-center justify-center border border-emerald-800">
+
+        {/* Monedas */}
+        <View className="bg-gray-900/90 rounded-2xl px-3 py-2 border border-white/10">
+          <Text className="text-yellow-400 font-bold text-sm">🪙 {inventory.coins}</Text>
+        </View>
+
+        {/* Refresh */}
+        <TouchableOpacity
+          onPress={refresh}
+          className="bg-red-600/90 rounded-full w-11 h-11 items-center justify-center border border-red-800"
+        >
           <Text className="text-white text-lg">🔄</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Panel inferior */}
-      <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }} className="bg-gray-950/95 rounded-t-3xl px-5 pt-4 pb-8 border-t border-white/10">
-        <Text className="text-white font-bold text-base mb-3">Zonas detectadas cerca de ti</Text>
+      {/* ── Panel inferior ── */}
+      <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
+        className="bg-gray-950/95 rounded-t-3xl px-5 pt-4 pb-6 border-t border-white/10"
+      >
+        <Text className="text-white font-bold text-sm mb-2">
+          {spawns.length} Pokémon salvajes cerca de ti
+        </Text>
         <View className="flex-row flex-wrap gap-2">
           {[...new Set(spawns.map(s => s.featureType))].map(ft => (
             <View key={ft} className="flex-row items-center gap-1 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
@@ -163,18 +217,22 @@ export default function MapScreen() {
             </View>
           ))}
         </View>
-        <Text className="text-gray-600 text-xs mt-3">📍 Datos de OpenStreetMap · Toca un Pokémon para verlo</Text>
+        <Text className="text-gray-600 text-xs mt-2">
+          📍 Toca un Pokémon para intentar capturarlo
+        </Text>
       </View>
+
+      {/* ── Modal de captura ── */}
+      <CaptureModal
+        visible={modalVisible}
+        pokemon={captureTarget}
+        pokeballs={inventory.pokeballs}
+        onCapture={handleCapture}
+        onClose={() => {
+          setModalVisible(false);
+          setCaptureTarget(null);
+        }}
+      />
     </View>
   );
 }
-
-const darkMapStyle = [
-  { elementType: 'geometry',           stylers: [{ color: '#1d2c4d' }] },
-  { elementType: 'labels.text.fill',   stylers: [{ color: '#8ec3b9' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] },
-  { featureType: 'road',     elementType: 'geometry',         stylers: [{ color: '#304a7d' }] },
-  { featureType: 'road',     elementType: 'labels.text.fill', stylers: [{ color: '#98a5be' }] },
-  { featureType: 'water',    elementType: 'geometry',         stylers: [{ color: '#0e1626' }] },
-  { featureType: 'poi.park', elementType: 'geometry.fill',    stylers: [{ color: '#023e58' }] },
-];
