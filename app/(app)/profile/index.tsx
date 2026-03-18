@@ -1,6 +1,6 @@
 import { POKEBALL_CONFIG, PokeballType } from '@/lib/core/types/game.types';
 import { clearSession, getSession, UserSession } from '@/lib/modules/auth/auth.service';
-import { useInventory } from '@/lib/modules/game/useInventory';
+import { useInventoryContext } from '@/lib/modules/game/InventoryContext';
 import { useFavorites } from '@/lib/modules/pokemon/hooks/useFavorites';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -11,7 +11,7 @@ export default function ProfileScreen() {
   const [session, setSession]       = useState<UserSession | null>(null);
   const [loggingOut, setLoggingOut] = useState(false);
   const { favorites }               = useFavorites();
-  const { inventory, captured }     = useInventory();
+  const { inventory, captured }     = useInventoryContext();
 
   useEffect(() => { getSession().then(setSession); }, []);
 

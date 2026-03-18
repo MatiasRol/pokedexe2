@@ -4,7 +4,7 @@ import TypeBadge from '@/components/atoms/TypeBadge';
 import QRModal from '@/components/molecules/QRModal';
 import IAPanelLateral from '@/components/organisms/IAPanelLateral';
 import { POKEBALL_CONFIG } from '@/lib/core/types/game.types';
-import { useInventory } from '@/lib/modules/game/useInventory';
+import { useInventoryContext } from '@/lib/modules/game/InventoryContext';
 import { useNotifications } from '@/lib/modules/notifications/useNotifications';
 import { useFavorites } from '@/lib/modules/pokemon/hooks/useFavorites';
 import { usePokemon } from '@/lib/modules/pokemon/hooks/usePokemon';
@@ -26,7 +26,7 @@ export default function PokedexScreen() {
   const { pokemon, loading, error, setPokemonId } = usePokemon(25);
   const [searchInput, setSearchInput]             = useState('');
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
-  const { captured }                              = useInventory();
+  const { captured }                              = useInventoryContext();
   const [qrVisible, setQrVisible]                 = useState(false);
   const [iaVisible, setIaVisible]                 = useState(false);
   const [iaInitialMsg, setIaInitialMsg]           = useState<string | undefined>();

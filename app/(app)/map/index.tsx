@@ -4,7 +4,7 @@ import { getTypeHex } from '@/lib/core/constants/colors';
 import { POKEBALL_CONFIG, PokeballType } from '@/lib/core/types/game.types';
 import { SpawnedPokemon } from '@/lib/core/types/location.types';
 import { Pokemon } from '@/lib/core/types/pokemon.types';
-import { useInventory } from '@/lib/modules/game/useInventory';
+import { useInventoryContext } from '@/lib/modules/game/InventoryContext';
 import { FEATURE_CONFIG, getSpawnedPokemon } from '@/lib/modules/maps/services/locationPokemon';
 import { useNotifications } from '@/lib/modules/notifications/useNotifications';
 import * as Location from 'expo-location';
@@ -67,14 +67,20 @@ function useMapPokemon() {
 // ─── Pantalla ─────────────────────────────────────────────────────────────────
 
 export default function MapScreen() {
-  const router  = useRouter();
+  const router = useRouter();
   const { coords, spawns, loading, phase, error, refresh } = useMapPokemon();
-  const { inventory, attemptCapture } = useInventory();
-  const mapRef  = useRef<MapView>(null);
+
+  // ✅ Contexto global — se actualiza en tiempo real en toda la app
+  const { inventory, attemptCapture } = useInventoryContext();
+
+  const mapRef = useRef<MapView>(null);
 
   // Estado del modal de captura
   const [captureTarget, setCaptureTarget] = useState<Pokemon | null>(null);
   const [modalVisible, setModalVisible]   = useState(false);
+
+  // ✅ IDs de Pokémon ya capturados — desaparecen del mapa inmediatamente
+  const [capturedIds, setCapturedIds] = useState<Set<string>>(new Set());
 
   const handleMarkerPress = (pokemon: Pokemon) => {
     setCaptureTarget(pokemon);
@@ -83,7 +89,11 @@ export default function MapScreen() {
 
   const handleCapture = (ballType: PokeballType) => {
     if (!captureTarget) return 'fail' as const;
-    return attemptCapture(captureTarget, ballType);
+    const result = attemptCapture(captureTarget, ballType);
+    if (result === 'success') {
+      setCapturedIds(prev => new Set([...prev, `${captureTarget.id}`]));
+    }
+    return result;
   };
 
   // ── Cargando ──
@@ -118,6 +128,11 @@ export default function MapScreen() {
     );
   }
 
+  // Pokémon visibles = todos menos los ya capturados
+  const visibleSpawns = spawns.filter(
+    spawn => !capturedIds.has(`${spawn.pokemon.id}`)
+  );
+
   return (
     <View className="flex-1">
       <MapView
@@ -125,8 +140,8 @@ export default function MapScreen() {
         style={{ flex: 1 }}
         provider={PROVIDER_GOOGLE}
         initialRegion={{
-          latitude:      coords.lat,
-          longitude:     coords.lng,
+          latitude:       coords.lat,
+          longitude:      coords.lng,
           latitudeDelta:  0.018,
           longitudeDelta: 0.018,
         }}
@@ -142,14 +157,13 @@ export default function MapScreen() {
           strokeWidth={1.5}
         />
 
-        {/* Pokémon salvajes */}
-        {spawns.map((spawn, i) => (
+        {/* ✅ Solo Pokémon no capturados */}
+        {visibleSpawns.map((spawn, i) => (
           <Marker
             key={`${spawn.pokemon.id}-${i}`}
             coordinate={{ latitude: spawn.lat, longitude: spawn.lng }}
             onPress={() => handleMarkerPress(spawn.pokemon)}
           >
-            {/* Ícono animado del Pokémon */}
             <View style={{
               width: 52, height: 52, borderRadius: 26,
               backgroundColor: 'white',
@@ -159,18 +173,24 @@ export default function MapScreen() {
               shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 4,
             }}>
               <Image
-                source={{ uri: spawn.pokemon.sprites.other['official-artwork'].front_default ?? spawn.pokemon.sprites.front_default }}
+                source={{
+                  uri: spawn.pokemon.sprites.other['official-artwork'].front_default
+                    ?? spawn.pokemon.sprites.front_default,
+                }}
                 style={{ width: 40, height: 40 }}
                 resizeMode="contain"
               />
             </View>
 
-            {/* Callout con info rápida */}
             <Callout tooltip>
               <View style={{ width: 120 }} className="bg-white rounded-2xl p-2 items-center shadow-lg border border-gray-100">
                 <Text className="text-gray-800 font-bold text-xs capitalize">{spawn.pokemon.name}</Text>
                 <Text className="text-gray-400 text-xs mt-0.5">Toca para capturar</Text>
-                <Text className="text-red-500 text-lg mt-1">⚽</Text>
+                <Image
+                  source={{ uri: POKEBALL_CONFIG.normal.imageUrl }}
+                  style={{ width: 24, height: 24, marginTop: 4 }}
+                  resizeMode="contain"
+                />
               </View>
             </Callout>
           </Marker>
@@ -178,10 +198,11 @@ export default function MapScreen() {
       </MapView>
 
       {/* ── Header flotante ── */}
-      <View style={{ position: 'absolute', top: 52, left: 16, right: 16 }}
+      <View
+        style={{ position: 'absolute', top: 52, left: 16, right: 16 }}
         className="flex-row justify-between items-center"
       >
-        {/* Pokébolas disponibles — imágenes reales */}
+        {/* ✅ Pokébolas con imagen real — se actualiza en tiempo real */}
         <View className="bg-gray-900/90 rounded-2xl px-3 py-2 border border-white/10 flex-row gap-3">
           {(Object.keys(POKEBALL_CONFIG) as PokeballType[]).map(type => (
             <View key={type} className="items-center">
@@ -190,17 +211,18 @@ export default function MapScreen() {
                 style={{ width: 28, height: 28 }}
                 resizeMode="contain"
               />
-              <Text className="text-white text-xs font-bold mt-0.5">{inventory.pokeballs[type]}</Text>
+              <Text className="text-white text-xs font-bold mt-0.5">
+                {inventory.pokeballs[type]}
+              </Text>
             </View>
           ))}
         </View>
 
-        {/* Monedas */}
+        {/* ✅ Monedas en tiempo real */}
         <View className="bg-gray-900/90 rounded-2xl px-3 py-2 border border-white/10">
           <Text className="text-yellow-400 font-bold text-sm">🪙 {inventory.coins}</Text>
         </View>
 
-        {/* Refresh */}
         <TouchableOpacity
           onPress={refresh}
           className="bg-red-600/90 rounded-full w-11 h-11 items-center justify-center border border-red-800"
@@ -210,15 +232,19 @@ export default function MapScreen() {
       </View>
 
       {/* ── Panel inferior ── */}
-      <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
+      <View
+        style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}
         className="bg-gray-950/95 rounded-t-3xl px-5 pt-4 pb-6 border-t border-white/10"
       >
         <Text className="text-white font-bold text-sm mb-2">
-          {spawns.length} Pokémon salvajes cerca de ti
+          {visibleSpawns.length} Pokémon salvajes cerca de ti
         </Text>
         <View className="flex-row flex-wrap gap-2">
           {[...new Set(spawns.map(s => s.featureType))].map(ft => (
-            <View key={ft} className="flex-row items-center gap-1 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
+            <View
+              key={ft}
+              className="flex-row items-center gap-1 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full"
+            >
               <Text>{FEATURE_CONFIG[ft].emoji}</Text>
               <Text className="text-gray-300 text-xs">{FEATURE_CONFIG[ft].label}</Text>
             </View>

@@ -1,6 +1,6 @@
 import { SoundService } from '@/lib/core/audio/sounds';
 import { POKEBALL_CONFIG, PokeballType } from '@/lib/core/types/game.types';
-import { useInventory } from '@/lib/modules/game/useInventory';
+import { useInventoryContext } from '@/lib/modules/game/InventoryContext';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
@@ -52,7 +52,7 @@ type Tab = 'pokeballs' | 'pokemon' | 'sell' | 'recharge';
 
 export default function StoreScreen() {
   const router = useRouter();
-  const { inventory, captured, buyPokeball, buyPokemon, sellPokemon, addCoins } = useInventory();
+  const { inventory, captured, buyPokeball, buyPokemon, sellPokemon, addCoins } = useInventoryContext();
   const [activeTab, setActiveTab]     = useState<Tab>('pokeballs');
   const [feedback, setFeedback]       = useState<string | null>(null);
 
