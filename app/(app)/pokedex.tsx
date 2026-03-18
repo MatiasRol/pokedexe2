@@ -4,7 +4,7 @@ import TypeBadge from '@/components/atoms/TypeBadge';
 import QRModal from '@/components/molecules/QRModal';
 import IAPanelLateral from '@/components/organisms/IAPanelLateral';
 import { POKEBALL_CONFIG } from '@/lib/core/types/game.types';
-import { useInventoryContext } from '@/lib/modules/game/InventoryContext';
+import { useInventory } from '@/lib/modules/game/useInventory';
 import { useNotifications } from '@/lib/modules/notifications/useNotifications';
 import { useFavorites } from '@/lib/modules/pokemon/hooks/useFavorites';
 import { usePokemon } from '@/lib/modules/pokemon/hooks/usePokemon';
@@ -26,7 +26,7 @@ export default function PokedexScreen() {
   const { pokemon, loading, error, setPokemonId } = usePokemon(25);
   const [searchInput, setSearchInput]             = useState('');
   const { favorites, toggleFavorite, isFavorite } = useFavorites();
-  const { captured }                              = useInventoryContext();
+  const { captured }                              = useInventory();
   const [qrVisible, setQrVisible]                 = useState(false);
   const [iaVisible, setIaVisible]                 = useState(false);
   const [iaInitialMsg, setIaInitialMsg]           = useState<string | undefined>();
@@ -85,7 +85,7 @@ export default function PokedexScreen() {
             onSubmitEditing={handleSearch}
             placeholder="Buscar Pokémon por nombre o #ID"
             placeholderTextColor="#6b7280"
-            className="flex-1 px-4 py-3 bg-white/5 rounded-xl border border-white/10 text-white font-medium"
+            className="flex-1 px-4 py-3 bg-white/5 rounded-xl border border-white/20 text-white font-medium"
           />
           <TouchableOpacity
             onPress={handleSearch}
@@ -105,7 +105,7 @@ export default function PokedexScreen() {
               🎒 Pokémon capturados ({captured.length})
             </Text>
             {captured.length === 0 ? (
-              <View className="bg-gray-900 rounded-2xl p-6 items-center border border-white/10 mb-4">
+              <View className="bg-gray-900 rounded-2xl p-6 items-center border border-white/20 mb-4">
                 <Text className="text-4xl mb-2">🗺️</Text>
                 <Text className="text-gray-400 text-sm text-center">
                   Aún no has capturado ninguno. ¡Ve al mapa!
@@ -117,7 +117,7 @@ export default function PokedexScreen() {
                   <TouchableOpacity
                     key={entry.uid}
                     onPress={() => { setPokemonId(entry.pokemon.id); setShowCaptured(false); }}
-                    className="bg-gray-900 rounded-2xl p-3 mr-3 items-center border border-white/10"
+                    className="bg-gray-900 rounded-2xl p-3 mr-3 items-center border border-white/20"
                     style={{ width: 90 }}
                   >
                     <Image
@@ -143,7 +143,7 @@ export default function PokedexScreen() {
           {loading && <LoadingSpinner />}
 
           {error && (
-            <View className="bg-gray-900 rounded-2xl p-6 items-center border border-white/10">
+            <View className="bg-gray-900 rounded-2xl p-6 items-center border border-white/20">
               <Text className="text-red-400 font-bold mb-3">⚠️ {error}</Text>
               <TouchableOpacity
                 onPress={() => setPokemonId(Math.floor(Math.random() * 898) + 1)}
@@ -157,7 +157,7 @@ export default function PokedexScreen() {
           {!loading && !error && pokemon && (
             <View>
               {/* Imagen */}
-              <View className="bg-gray-900 rounded-3xl p-6 mb-4 relative border border-white/10">
+              <View className="bg-gray-900 rounded-3xl p-6 mb-4 relative border border-white/20">
                 <TouchableOpacity
                   onPress={handleToggleFavorite}
                   className="absolute top-4 right-4 z-10"
@@ -173,7 +173,7 @@ export default function PokedexScreen() {
               </View>
 
               {/* Info */}
-              <View className="bg-gray-900 rounded-3xl p-5 mb-4 border border-white/10">
+              <View className="bg-gray-900 rounded-3xl p-5 mb-4 border border-white/20">
                 <Text className="text-gray-500 font-bold text-sm">
                   #{String(pokemon.id).padStart(3, '0')}
                 </Text>
@@ -202,7 +202,7 @@ export default function PokedexScreen() {
               </View>
 
               {/* Stats */}
-              <View className="bg-gray-900 rounded-3xl p-5 mb-4 border border-white/10">
+              <View className="bg-gray-900 rounded-3xl p-5 mb-4 border border-white/20">
                 <Text className="text-white font-bold text-base mb-3">⚡ Estadísticas</Text>
                 {pokemon.stats.map(stat => (
                   <StatBar key={stat.stat.name} name={stat.stat.name} value={stat.base_stat} />
@@ -216,7 +216,7 @@ export default function PokedexScreen() {
                   { icon: '📏', val: `${(pokemon.height / 10).toFixed(1)}`, unit: 'M' },
                   { icon: '✨', val: `${pokemon.abilities.length}`, unit: 'HAB' },
                 ].map(({ icon, val, unit }) => (
-                  <View key={unit} className="flex-1 bg-gray-900 rounded-2xl p-4 items-center border border-white/10">
+                  <View key={unit} className="flex-1 bg-gray-900 rounded-2xl p-4 items-center border border-white/20">
                     <Text className="text-2xl mb-1">{icon}</Text>
                     <Text className="text-white text-xl font-bold">{val}</Text>
                     <Text className="text-gray-500 text-xs">{unit}</Text>

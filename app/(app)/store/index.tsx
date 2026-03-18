@@ -1,6 +1,6 @@
 import { SoundService } from '@/lib/core/audio/sounds';
 import { POKEBALL_CONFIG, PokeballType } from '@/lib/core/types/game.types';
-import { useInventoryContext } from '@/lib/modules/game/InventoryContext';
+import { useInventory } from '@/lib/modules/game/useInventory';
 import { useRouter } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
@@ -52,7 +52,7 @@ type Tab = 'pokeballs' | 'pokemon' | 'sell' | 'recharge';
 
 export default function StoreScreen() {
   const router = useRouter();
-  const { inventory, captured, buyPokeball, buyPokemon, sellPokemon, addCoins } = useInventoryContext();
+  const { inventory, captured, buyPokeball, buyPokemon, sellPokemon, addCoins } = useInventory();
   const [activeTab, setActiveTab]     = useState<Tab>('pokeballs');
   const [feedback, setFeedback]       = useState<string | null>(null);
 
@@ -170,7 +170,7 @@ export default function StoreScreen() {
 
       {/* Feedback */}
       {feedback && (
-        <View className="mx-4 mt-3 bg-gray-800 rounded-2xl px-4 py-3 border border-white/10">
+        <View className="mx-4 mt-3 bg-gray-800 rounded-2xl px-4 py-3 border border-white/20">
           <Text className="text-white text-center font-semibold">{feedback}</Text>
         </View>
       )}
@@ -186,7 +186,7 @@ export default function StoreScreen() {
             {(Object.keys(POKEBALL_CONFIG) as PokeballType[]).map(type => {
               const cfg = POKEBALL_CONFIG[type];
               return (
-                <View key={type} className="bg-gray-900 rounded-3xl p-5 mb-3 border border-white/10">
+                <View key={type} className="bg-gray-900 rounded-3xl p-5 mb-3 border border-white/20">
                   <View className="flex-row items-center mb-3">
                     <Text className="text-4xl mr-4">{cfg.emoji}</Text>
                     <View className="flex-1">
@@ -206,7 +206,7 @@ export default function StoreScreen() {
                       <TouchableOpacity
                         key={qty}
                         onPress={() => handleBuyPokeball(type, qty)}
-                        className="flex-1 bg-white/5 border border-white/10 py-2 rounded-xl items-center"
+                        className="flex-1 bg-white/5 border border-white/20 py-2 rounded-xl items-center"
                       >
                         <Text className="text-white font-bold text-sm">x{qty}</Text>
                         <Text className="text-yellow-400 text-xs">🪙 {cfg.price * qty}</Text>
@@ -225,7 +225,7 @@ export default function StoreScreen() {
             <Text className="text-gray-400 text-sm mb-4">Pokémon disponibles para tu equipo.</Text>
             <View className="flex-row flex-wrap gap-3">
               {STORE_POKEMON.map(item => (
-                <View key={item.id} className="bg-gray-900 rounded-3xl p-4 items-center border border-white/10" style={{ width: '47%' }}>
+                <View key={item.id} className="bg-gray-900 rounded-3xl p-4 items-center border border-white/20" style={{ width: '47%' }}>
                   <Image
                     source={{ uri: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${item.id}.png` }}
                     style={{ width: 80, height: 80 }}
@@ -261,7 +261,7 @@ export default function StoreScreen() {
               <View>
                 <Text className="text-gray-400 text-sm mb-4">{captured.length} Pokémon en tu equipo.</Text>
                 {captured.map(entry => (
-                  <View key={entry.uid} className="bg-gray-900 rounded-2xl p-4 mb-3 flex-row items-center border border-white/10">
+                  <View key={entry.uid} className="bg-gray-900 rounded-2xl p-4 mb-3 flex-row items-center border border-white/20">
                     <Image source={{ uri: entry.pokemon.sprites.other['official-artwork'].front_default }} style={{ width: 56, height: 56 }} resizeMode="contain" />
                     <View className="flex-1 ml-3">
                       <Text className="text-white font-bold capitalize">{entry.pokemon.name}</Text>
@@ -371,7 +371,7 @@ export default function StoreScreen() {
 
                 {/* Campos */}
                 <Text className="text-gray-400 font-semibold mb-2 text-sm">Número de Tarjeta</Text>
-                <View className="bg-gray-900 border border-white/10 rounded-2xl px-4 py-3 mb-1 flex-row items-center">
+                <View className="bg-gray-900 border border-white/20 rounded-2xl px-4 py-3 mb-1 flex-row items-center">
                   <TextInput
                     value={card.number}
                     onChangeText={t => setCard(p => ({ ...p, number: formatCardNumber(t) }))}
@@ -392,7 +392,7 @@ export default function StoreScreen() {
                   placeholder="NOMBRE COMO EN LA TARJETA"
                   placeholderTextColor="#6b7280"
                   autoCapitalize="characters"
-                  className="bg-gray-900 border border-white/10 rounded-2xl px-4 py-3 text-white mb-1"
+                  className="bg-gray-900 border border-white/20 rounded-2xl px-4 py-3 text-white mb-1"
                 />
                 {cardErrors.name && <Text className="text-red-400 text-xs mb-3">⚠️ {cardErrors.name}</Text>}
 
@@ -406,7 +406,7 @@ export default function StoreScreen() {
                       placeholderTextColor="#6b7280"
                       keyboardType="number-pad"
                       maxLength={5}
-                      className="bg-gray-900 border border-white/10 rounded-2xl px-4 py-3 text-white font-mono text-center"
+                      className="bg-gray-900 border border-white/20 rounded-2xl px-4 py-3 text-white font-mono text-center"
                     />
                     {cardErrors.expiry && <Text className="text-red-400 text-xs mt-1">⚠️ {cardErrors.expiry}</Text>}
                   </View>
@@ -420,19 +420,19 @@ export default function StoreScreen() {
                       keyboardType="number-pad"
                       secureTextEntry
                       maxLength={4}
-                      className="bg-gray-900 border border-white/10 rounded-2xl px-4 py-3 text-white font-mono text-center"
+                      className="bg-gray-900 border border-white/20 rounded-2xl px-4 py-3 text-white font-mono text-center"
                     />
                     {cardErrors.cvv && <Text className="text-red-400 text-xs mt-1">⚠️ {cardErrors.cvv}</Text>}
                   </View>
                 </View>
 
-                <View className="bg-white/5 rounded-2xl p-3 mt-4 mb-5 flex-row items-center gap-3 border border-white/10">
+                <View className="bg-white/5 rounded-2xl p-3 mt-4 mb-5 flex-row items-center gap-3 border border-white/20">
                   <Text className="text-2xl">🔒</Text>
                   <Text className="text-gray-400 text-xs flex-1">Conexión cifrada SSL. No almacenamos tu información.</Text>
                 </View>
 
                 <View className="flex-row gap-3 mb-6">
-                  <TouchableOpacity onPress={() => setPayStep('select')} className="flex-1 bg-white/5 py-4 rounded-2xl items-center border border-white/10">
+                  <TouchableOpacity onPress={() => setPayStep('select')} className="flex-1 bg-white/5 py-4 rounded-2xl items-center border border-white/20">
                     <Text className="text-white font-bold">← Volver</Text>
                   </TouchableOpacity>
                   <TouchableOpacity onPress={handlePay} className="flex-1 bg-red-600 py-4 rounded-2xl items-center border border-red-800">
@@ -467,7 +467,7 @@ export default function StoreScreen() {
                 <Text className="text-gray-400 text-base text-center mb-8">
                   Se acreditaron 🪙 {pack?.coins.toLocaleString()} monedas a tu cuenta.
                 </Text>
-                <View className="bg-gray-900 rounded-2xl p-4 w-full border border-white/10 mb-6">
+                <View className="bg-gray-900 rounded-2xl p-4 w-full border border-white/20 mb-6">
                   <View className="flex-row justify-between py-2">
                     <Text className="text-gray-400">Paquete</Text>
                     <Text className="text-white font-semibold">🪙 {pack?.coins.toLocaleString()}</Text>
@@ -484,7 +484,7 @@ export default function StoreScreen() {
                 <TouchableOpacity onPress={resetPay} className="bg-red-600 py-4 rounded-2xl items-center w-full border border-red-800 mb-3">
                   <Text className="text-white font-bold">🛒 Seguir comprando</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => router.push('/(app)/map')} className="bg-white/5 py-4 rounded-2xl items-center w-full border border-white/10">
+                <TouchableOpacity onPress={() => router.push('/(app)/map')} className="bg-white/5 py-4 rounded-2xl items-center w-full border border-white/20">
                   <Text className="text-white font-bold">🗺️ Ir al Mapa</Text>
                 </TouchableOpacity>
               </View>

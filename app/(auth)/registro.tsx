@@ -4,6 +4,7 @@ import { saveSession } from '@/lib/modules/auth/auth.service';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -48,41 +49,88 @@ export default function RegistroScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-red-600"
+      className="flex-1 bg-gray-950"
     >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View className="flex-1 justify-center px-6 py-12">
 
+          {/* Logo + título */}
           <View className="items-center mb-8">
-            <View className="bg-white rounded-full w-24 h-24 items-center justify-center mb-4 shadow-lg">
-              <Text className="text-5xl">🎮</Text>
+            <View
+              className="rounded-3xl mb-5 overflow-hidden"
+              style={{ width: 80, height: 80, backgroundColor: '#1a0000' }}
+            >
+              <Image
+                source={require('../../assets/images/icon.png')}
+                style={{ width: 80, height: 80 }}
+                resizeMode="cover"
+              />
             </View>
-            <Text className="text-4xl font-bold text-white mb-2">Crear Cuenta</Text>
-            <Text className="text-white text-base opacity-90">Regístrate para comenzar</Text>
+            <Text className="text-3xl font-bold text-white mb-1">Crear Cuenta</Text>
+            <Text className="text-gray-400 text-sm">Únete y empieza a capturar</Text>
           </View>
 
-          <View className="bg-white/10 rounded-3xl p-6 border-2 border-white/20 shadow-2xl">
-            <CustomInput label="Nombre Completo"      placeholder="Ingresa tu nombre"                  value={formData.nombre}          onChangeText={t => updateField('nombre', t)}          error={errors.nombre}          autoCapitalize="words" />
-            <CustomInput label="Correo Electrónico"   placeholder="ejemplo@correo.com"                 value={formData.email}           onChangeText={t => updateField('email', t)}           error={errors.email}           keyboardType="email-address" autoCapitalize="none" />
-            <CustomInput label="Contraseña"           placeholder="Mínimo 6 caracteres, 1 mayúscula"  value={formData.password}        onChangeText={t => updateField('password', t)}        error={errors.password}        secureTextEntry />
-            <CustomInput label="Confirmar Contraseña" placeholder="Repite tu contraseña"              value={formData.confirmPassword} onChangeText={t => updateField('confirmPassword', t)} error={errors.confirmPassword} secureTextEntry />
+          {/* Formulario glassmorphism oscuro */}
+          <View
+            className="rounded-3xl p-6 border border-white/10"
+            style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+          >
+            <CustomInput
+              label="Nombre Completo"
+              placeholder="Ingresa tu nombre"
+              value={formData.nombre}
+              onChangeText={t => updateField('nombre', t)}
+              error={errors.nombre}
+              autoCapitalize="words"
+            />
+            <CustomInput
+              label="Correo Electrónico"
+              placeholder="ejemplo@correo.com"
+              value={formData.email}
+              onChangeText={t => updateField('email', t)}
+              error={errors.email}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <CustomInput
+              label="Contraseña"
+              placeholder="Mínimo 6 caracteres, 1 mayúscula, 1 número"
+              value={formData.password}
+              onChangeText={t => updateField('password', t)}
+              error={errors.password}
+              secureTextEntry
+            />
+            <CustomInput
+              label="Confirmar Contraseña"
+              placeholder="Repite tu contraseña"
+              value={formData.confirmPassword}
+              onChangeText={t => updateField('confirmPassword', t)}
+              error={errors.confirmPassword}
+              secureTextEntry
+            />
 
             <TouchableOpacity
               onPress={handleSubmit}
               disabled={isSubmitting}
-              className={`mt-4 py-5 rounded-2xl items-center border-2 shadow-lg ${
-                isSubmitting ? 'bg-gray-400 border-gray-500' : 'bg-green-500 border-green-700'
+              className={`mt-4 py-4 rounded-2xl items-center border ${
+                isSubmitting
+                  ? 'bg-gray-700 border-gray-600'
+                  : 'bg-red-600 border-red-800'
               }`}
             >
-              <Text className="text-white font-bold text-lg">
+              <Text className="text-white font-bold text-base">
                 {isSubmitting ? '⏳ Registrando...' : '✅ Crear Cuenta'}
               </Text>
             </TouchableOpacity>
 
-            <View className="flex-row justify-center items-center mt-6">
-              <Text className="text-white text-base mr-2">¿Ya tienes cuenta?</Text>
+            <View className="flex-row justify-center items-center mt-5">
+              <Text className="text-gray-400 text-sm mr-2">¿Ya tienes cuenta?</Text>
               <TouchableOpacity onPress={() => router.push('/(auth)/login')}>
-                <Text className="text-yellow-300 font-bold text-base underline">Inicia Sesión</Text>
+                <Text className="text-red-400 font-bold text-sm">Inicia Sesión</Text>
               </TouchableOpacity>
             </View>
           </View>

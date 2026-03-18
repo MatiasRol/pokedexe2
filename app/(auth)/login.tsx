@@ -1,6 +1,10 @@
+import CustomInput from '@/components/molecules/CustomInput';
+import { LoginFormData, LoginSchema } from '@/lib/core/schemas/authSchemas';
+import { saveSession } from '@/lib/modules/auth/auth.service';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -8,9 +12,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { LoginFormData, LoginSchema } from '@/lib/core/schemas/authSchemas';
-import CustomInput from '@/components/molecules/CustomInput';
-import { saveSession } from '@/lib/modules/auth/auth.service';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -47,20 +48,38 @@ export default function LoginScreen() {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="flex-1 bg-red-600"
+      className="flex-1 bg-gray-950"
     >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <View className="flex-1 justify-center px-6 py-12">
 
+          {/* Logo + título */}
           <View className="items-center mb-10">
-            <View className="bg-white rounded-full w-28 h-28 items-center justify-center mb-4 shadow-2xl">
-              <Text className="text-6xl">🔐</Text>
+            <View
+              className="rounded-3xl mb-5 overflow-hidden"
+              style={{ width: 100, height: 100, backgroundColor: '#1a0000' }}
+            >
+              <Image
+                source={require('../../assets/images/icon.png')}
+                style={{ width: 100, height: 100 }}
+                resizeMode="cover"
+              />
             </View>
-            <Text className="text-5xl font-bold text-white mb-2">Bienvenido</Text>
-            <Text className="text-white text-lg opacity-90">Inicia sesión en tu cuenta</Text>
+            <Text className="text-4xl font-bold text-white mb-1">PokédexE2</Text>
+            <Text className="text-gray-400 text-base">Captura, colecciona y conquista</Text>
           </View>
 
-          <View className="bg-white/10 rounded-3xl p-6 border-2 border-white/20 shadow-2xl">
+          {/* Formulario glassmorphism oscuro */}
+          <View
+            className="rounded-3xl p-6 border border-white/10"
+            style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+          >
+            <Text className="text-white font-bold text-xl mb-5">Iniciar Sesión</Text>
+
             <CustomInput
               label="Correo Electrónico"
               placeholder="ejemplo@correo.com"
@@ -82,22 +101,29 @@ export default function LoginScreen() {
             <TouchableOpacity
               onPress={handleSubmit}
               disabled={isSubmitting}
-              className={`mt-6 py-5 rounded-2xl items-center border-2 shadow-lg ${
-                isSubmitting ? 'bg-gray-400 border-gray-500' : 'bg-blue-500 border-blue-700'
+              className={`mt-4 py-4 rounded-2xl items-center border ${
+                isSubmitting
+                  ? 'bg-gray-700 border-gray-600'
+                  : 'bg-red-600 border-red-800'
               }`}
             >
-              <Text className="text-white font-bold text-lg">
+              <Text className="text-white font-bold text-base">
                 {isSubmitting ? '⏳ Iniciando...' : '🚀 Iniciar Sesión'}
               </Text>
             </TouchableOpacity>
 
-            <View className="flex-row justify-center items-center mt-6">
-              <Text className="text-white text-base mr-2">¿No tienes cuenta?</Text>
+            <View className="flex-row justify-center items-center mt-5">
+              <Text className="text-gray-400 text-sm mr-2">¿No tienes cuenta?</Text>
               <TouchableOpacity onPress={() => router.push('/(auth)/registro')}>
-                <Text className="text-yellow-300 font-bold text-base underline">Regístrate</Text>
+                <Text className="text-red-400 font-bold text-sm">Regístrate</Text>
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* Decoración inferior */}
+          <Text className="text-gray-700 text-xs text-center mt-8">
+            Usa cualquier email válido y contraseña de 6+ caracteres
+          </Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

@@ -1,3 +1,8 @@
+/**
+ * 🖊️ CustomInput.tsx — Molécula
+ * Tema oscuro consistente con el resto de la app.
+ */
+
 import { Text, TextInput, TextInputProps, View } from 'react-native';
 
 interface CustomInputProps extends TextInputProps {
@@ -19,21 +24,39 @@ export default function CustomInput({
 }: CustomInputProps) {
   return (
     <View className="mb-4">
-      <Text className="text-white font-bold text-base mb-2 ml-1">{label}</Text>
+      {/* Label */}
+      <Text className="text-gray-400 font-semibold text-sm mb-2 ml-1">
+        {label}
+      </Text>
+
+      {/* Input oscuro */}
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#9CA3AF"
+        placeholderTextColor="#4b5563"
         secureTextEntry={secureTextEntry}
-        className={`bg-white px-5 py-4 rounded-2xl border-2 font-medium text-base ${
-          error ? 'border-red-500' : 'border-gray-300'
-        }`}
+        style={{
+          backgroundColor: 'rgba(255,255,255,0.07)',
+          borderWidth: 1,
+          borderColor: error ? '#ef4444' : 'rgba(255,255,255,0.12)',
+          borderRadius: 16,
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+          color: 'white',
+          fontSize: 15,
+          fontWeight: '500',
+        }}
         {...props}
       />
+
+      {/* Error */}
       {error && (
-        <View className="mt-2 bg-red-100 px-3 py-2 rounded-xl border border-red-300">
-          <Text className="text-red-700 text-sm font-semibold">⚠️ {error}</Text>
+        <View
+          className="mt-2 px-3 py-2 rounded-xl"
+          style={{ backgroundColor: 'rgba(239,68,68,0.15)', borderWidth: 1, borderColor: '#ef4444' }}
+        >
+          <Text className="text-red-400 text-xs font-semibold">⚠️ {error}</Text>
         </View>
       )}
     </View>
